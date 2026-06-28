@@ -31,5 +31,5 @@ go.work.sum
 .idea/
 
 # Built binary
-repofleet
-rf
+/repofleet
+/rf
