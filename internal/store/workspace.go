@@ -1,4 +1,4 @@
-package config
+package store
 
 import (
 	"os"
@@ -6,23 +6,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
-
-type Repo struct {
-	Name  string `yaml:"name"`
-	Path  string `yaml:"path"`
-	Forge string `yaml:"forge"` // "github" | "gitlab"
-	URL   string `yaml:"url"`
-}
-
-type Workspace struct {
-	Name  string `yaml:"name"`
-	Repos []Repo `yaml:"repos"`
-}
-
-type Config struct {
-	CurrentWorkspace string      `yaml:"current_workspace"`
-	Workspaces       []Workspace `yaml:"workspaces"`
-}
 
 func configPath() string {
 	base, _ := os.UserConfigDir()
@@ -63,7 +46,6 @@ func (c *Config) CurrentWS() *Workspace {
 			return &c.Workspaces[i]
 		}
 	}
-	// auto-create if missing
 	c.Workspaces = append(c.Workspaces, Workspace{Name: c.CurrentWorkspace})
 	return &c.Workspaces[len(c.Workspaces)-1]
 }

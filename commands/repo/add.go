@@ -2,10 +2,12 @@ package repo
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
-	"github.com/mehranzand/repofleet/internal/config"
+	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -18,8 +20,19 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <path>",
 		Short: "Add a repository to a workspace",
-		Args:  cobra.ExactArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return fmt.Errorf("missing required argument: <path>")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			switch forge {
+			case "github", "gitlab":
+			default:
+				return fmt.Errorf("invalid forge %q: must be github or gitlab", forge)
+			}
+
 			absPath, err := filepath.Abs(args[0])
 			if err != nil {
 				return err
@@ -35,11 +48,19 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 				repoName = filepath.Base(absPath)
 			}
 
-			repo := config.Repo{
+			remoteURL := url
+			if remoteURL == "" {
+				out, err := exec.Command("git", "-C", absPath, "remote", "get-url", "origin").Output()
+				if err == nil {
+					remoteURL = strings.TrimSpace(string(out))
+				}
+			}
+
+			repo := store.Repo{
 				Name:  repoName,
 				Path:  absPath,
 				Forge: forge,
-				URL:   url,
+				URL:   remoteURL,
 			}
 
 			f.Config.AddRepo(ws, repo)
@@ -53,7 +74,7 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&name, "name", "n", "", "name for the repo (default: directory basename)")
-	cmd.Flags().StringVarP(&forge, "forge", "f", "github", "forge type: github or gitlab")
+	cmd.Flags().StringVarP(&forge, "forge", "f", "github", `forge type: "github" or "gitlab"`)
 	cmd.Flags().StringVarP(&url, "url", "u", "", "remote URL of the repository")
 	cmd.Flags().StringVarP(&workspace, "workspace", "w", "", "target workspace (default: current)")
 

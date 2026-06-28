@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mehranzand/repofleet/commands/factory"
-	issueCtx "github.com/mehranzand/repofleet/internal/issue"
+	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -14,12 +14,12 @@ func newSwitchCmd(f *factory.Factory) *cobra.Command {
 		Short: "Switch all repos to the issue branch",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, err := issueCtx.Load(args[0])
+			ctx, err := store.LoadIssue(args[0])
 			if err != nil {
 				return fmt.Errorf("issue %q not found — create it first with: repofleet issue create %s", args[0], args[0])
 			}
 
-			if err := issueCtx.SetCurrent(ctx.ID); err != nil {
+			if err := store.SetCurrentIssue(ctx.ID); err != nil {
 				return err
 			}
 

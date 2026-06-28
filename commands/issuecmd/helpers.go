@@ -1,8 +1,8 @@
 package issuecmd
 
-import "github.com/mehranzand/repofleet/internal/config"
+import "github.com/mehranzand/repofleet/internal/store"
 
-func repoPaths(repos []config.Repo) []string {
+func repoPaths(repos []store.Repo) []string {
 	paths := make([]string, len(repos))
 	for i, r := range repos {
 		paths[i] = r.Path
@@ -10,12 +10,12 @@ func repoPaths(repos []config.Repo) []string {
 	return paths
 }
 
-func filterRepos(repos []config.Repo, names []string) []config.Repo {
+func filterRepos(repos []store.Repo, names []string) []store.Repo {
 	set := make(map[string]bool, len(names))
 	for _, n := range names {
 		set[n] = true
 	}
-	var out []config.Repo
+	var out []store.Repo
 	for _, r := range repos {
 		if set[r.Name] {
 			out = append(out, r)

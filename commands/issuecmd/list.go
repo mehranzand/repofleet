@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
-	issueCtx "github.com/mehranzand/repofleet/internal/issue"
+	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +30,7 @@ func newListCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			currentID := issueCtx.CurrentID()
+			currentID := store.CurrentIssueID()
 
 			fmt.Fprintf(f.IO.Out, "%-20s %-12s %-30s %s\n", "ID", "STATUS", "BRANCH", "REPOS")
 			fmt.Fprintf(f.IO.Out, "%-20s %-12s %-30s %s\n", "--", "------", "------", "-----")
@@ -41,11 +41,11 @@ func newListCmd(f *factory.Factory) *cobra.Command {
 					continue
 				}
 				id := strings.TrimSuffix(e.Name(), ".yaml")
-				ctx, err := issueCtx.Load(id)
+				ctx, err := store.LoadIssue(id)
 				if err != nil {
 					continue
 				}
-				if !showArchived && ctx.Status == issueCtx.StatusArchived {
+				if !showArchived && ctx.Status == store.IssueStatusArchived {
 					continue
 				}
 

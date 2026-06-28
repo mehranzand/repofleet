@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mehranzand/repofleet/commands/factory"
-	issueCtx "github.com/mehranzand/repofleet/internal/issue"
+	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -15,12 +15,12 @@ func newPushCmd(f *factory.Factory) *cobra.Command {
 		Use:   "push",
 		Short: "Push all issue branches to their remotes",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id := issueCtx.CurrentID()
+			id := store.CurrentIssueID()
 			if id == "" {
 				return fmt.Errorf("no active issue — switch to one with: repofleet issue switch <id>")
 			}
 
-			ctx, err := issueCtx.Load(id)
+			ctx, err := store.LoadIssue(id)
 			if err != nil {
 				return err
 			}

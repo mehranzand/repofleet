@@ -22,6 +22,7 @@ func NewRootCmd(appVersion string) *cobra.Command {
 		os.Exit(1)
 	}
 
+	cobra.AddTemplateFunc("logo", func() string { return iostreams.Logo(appVersion) })
 	cobra.AddTemplateFunc("green", iostreams.Green)
 	cobra.AddTemplateFunc("cyan", iostreams.Cyan)
 	cobra.AddTemplateFunc("bold", iostreams.Bold)
@@ -38,9 +39,18 @@ func NewRootCmd(appVersion string) *cobra.Command {
 		for _, c := range cmds {
 			index[c.Name()] = c
 		}
+		// apply fixed order for known top-level names
+		pinned := make(map[string]bool, len(cmdOrder))
 		ordered := make([]*cobra.Command, 0, len(cmds))
 		for _, name := range cmdOrder {
 			if c, ok := index[name]; ok && c.IsAvailableCommand() {
+				ordered = append(ordered, c)
+				pinned[name] = true
+			}
+		}
+		// append any remaining commands (subcommands of repo/issue/etc.) in original order
+		for _, c := range cmds {
+			if !pinned[c.Name()] && c.IsAvailableCommand() {
 				ordered = append(ordered, c)
 			}
 		}
@@ -52,7 +62,7 @@ func NewRootCmd(appVersion string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          binaryName,
 		Short:        "Multi-repo Git workflow manager",
-		Long:         "\n" + iostreams.Logo(appVersion),
+		Long:         "",
 		Version:      appVersion,
 		SilenceUsage: true,
 		CompletionOptions: cobra.CompletionOptions{
@@ -63,22 +73,25 @@ func NewRootCmd(appVersion string) *cobra.Command {
 	cmd.SetVersionTemplate(iostreams.Logo(appVersion) + "\n\n")
 
 	cmd.SetHelpTemplate(
-		`{{with .Long}}` +
+		"\n" +
+		`{{logo}}` + "\n\n" +
+
+			`{{with .Long}}` +
 			`{{. | trimRightSpace}}` + "\n\n" +
 			`{{end}}` +
 
-			`{{bold "Usage:"}}` + "\n" +
+			`{{green "Usage:"}}` + "\n" +
 			`  {{.UseLine}}{{if .HasAvailableSubCommands}} [command]{{end}}` + "\n\n" +
 
 			`{{if .HasAvailableSubCommands}}` +
-			`{{bold "Commands:"}}` + "\n" +
+			`{{green "Commands:"}}` + "\n" +
 			`{{range orderedCmds .Commands}}` +
 			`  {{rpadColor .Name $.NamePadding}} {{.Short}}` + "\n" +
 			`{{end}}` + "\n" +
 			`{{end}}` +
 
 			`{{if .HasAvailableLocalFlags}}` +
-			`{{bold "Options:"}}` + "\n" +
+			`{{green "Options:"}}` + "\n" +
 			`{{colorFlags .LocalFlags | trimRightSpace}}` + "\n" +
 			`{{end}}` +
 

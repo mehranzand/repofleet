@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
-	issueCtx "github.com/mehranzand/repofleet/internal/issue"
+	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -43,16 +43,16 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 				return fmt.Errorf("no repos selected — add repos with: repofleet repo add <path>")
 			}
 
-			ctx := &issueCtx.Context{
+			ctx := &store.Issue{
 				ID:         id,
 				BranchSlug: slug,
 				Repos:      repos,
-				Status:     issueCtx.StatusActive,
+				Status:     store.IssueStatusActive,
 			}
 			if err := ctx.Save(); err != nil {
 				return err
 			}
-			if err := issueCtx.SetCurrent(id); err != nil {
+			if err := store.SetCurrentIssue(id); err != nil {
 				return err
 			}
 
