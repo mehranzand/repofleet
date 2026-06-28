@@ -91,7 +91,6 @@ main → root → issuecmd.switch
 ```bash
 wget https://go.dev/dl/go1.22.5.linux-amd64.tar.gz
 sudo tar -C /usr/local -xzf go1.22.5.linux-amd64.tar.gz
-echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.zshrc && source ~/.zshrc
 ```
 
 **Build:**
@@ -102,23 +101,5 @@ go build -ldflags="-X main.version=0.1.0" -o repofleet ./cmd/repofleet
 
 **Run:**
 ```bash
-./repofleet version
-./repofleet --help
-```
-
----
-
-## Adding a New Command
-
-1. Create `commands/<name>/<name>.go` with `NewCmd(f *factory.Factory) *cobra.Command`
-2. Register it in `commands/root/root.go`: `cmd.AddCommand(name.NewCmd(f))`
-3. Business logic goes in `internal/` — not in the command file
-4. Command file only: parse flags → call internal → print output
-
----
-
-## Module
-
-```
-github.com/mehranzand/repofleet
+./repofleet
 ```
