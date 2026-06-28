@@ -50,6 +50,15 @@ func (c *Config) CurrentWS() *Workspace {
 	return &c.Workspaces[len(c.Workspaces)-1]
 }
 
+func (c *Config) WorkspaceRepos(wsName string) []Repo {
+	for i := range c.Workspaces {
+		if c.Workspaces[i].Name == wsName {
+			return c.Workspaces[i].Repos
+		}
+	}
+	return nil
+}
+
 func (c *Config) AddRepo(wsName string, repo Repo) {
 	for i := range c.Workspaces {
 		if c.Workspaces[i].Name == wsName {

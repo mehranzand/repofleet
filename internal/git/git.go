@@ -13,26 +13,28 @@ type Result struct {
 	Err      error
 }
 
+type indexedResult struct {
+	idx int
+	res Result
+}
+
 // Runner executes git commands across one or more repositories concurrently.
 type Runner struct{}
 
 func NewRunner() *Runner { return &Runner{} }
 
 // Run executes the given git args in every repoPath concurrently and
-// returns one Result per repository.
+// returns one Result per repository, preserving input order.
 func (r *Runner) Run(repoPaths []string, args ...string) []Result {
-	results := make([]Result, len(repoPaths))
-	ch := make(chan struct{ idx int; res Result }, len(repoPaths))
+	ch := make(chan indexedResult, len(repoPaths))
 
 	for i, path := range repoPaths {
 		go func(idx int, p string) {
-			ch <- struct {
-				idx int
-				res Result
-			}{idx, run(p, args...)}
+			ch <- indexedResult{idx, run(p, args...)}
 		}(i, path)
 	}
 
+	results := make([]Result, len(repoPaths))
 	for range repoPaths {
 		item := <-ch
 		results[item.idx] = item.res

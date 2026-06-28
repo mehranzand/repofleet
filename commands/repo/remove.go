@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mehranzand/repofleet/commands/factory"
+	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +29,22 @@ func newRemoveCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(f.IO.Out, "Removed %q from workspace %q\n", args[0], ws)
+			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Green("✓")+" "+iostreams.Cyan(fmt.Sprintf("Removed %q from workspace %q", args[0], ws)))
+
+			target := f.Config.CurrentWS()
+			if workspace != "" {
+				for i := range f.Config.Workspaces {
+					if f.Config.Workspaces[i].Name == workspace {
+						target = &f.Config.Workspaces[i]
+						break
+					}
+				}
+			}
+			if len(target.Repos) == 0 {
+				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Dim("No repositories in workspace "+ws))
+			} else {
+				iostreams.PrintRepos(f.IO.Out, target.Repos)
+			}
 			return nil
 		},
 	}

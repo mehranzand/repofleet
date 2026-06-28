@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mehranzand/repofleet/commands/factory"
+	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/spf13/cobra"
 )
 
@@ -30,15 +31,11 @@ func newListCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			if len(target.Repos) == 0 {
-				fmt.Fprintf(f.IO.Out, "No repositories in workspace %q\n", ws)
+				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Dim("No repositories in workspace "+ws))
 				return nil
 			}
 
-			fmt.Fprintf(f.IO.Out, "%-20s %-10s %s\n", "NAME", "FORGE", "PATH")
-			fmt.Fprintf(f.IO.Out, "%-20s %-10s %s\n", "----", "-----", "----")
-			for _, r := range target.Repos {
-				fmt.Fprintf(f.IO.Out, "%-20s %-10s %s\n", r.Name, r.Forge, r.Path)
-			}
+			iostreams.PrintRepos(f.IO.Out, target.Repos)
 			return nil
 		},
 	}

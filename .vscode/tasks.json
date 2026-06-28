@@ -10,10 +10,6 @@
       "label": "build: repofleet",
       "type": "shell",
       "command": "go build -ldflags='-X main.version=dev' -o repofleet ./cmd/repofleet",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
       "presentation": {
         "reveal": "always",
         "panel": "shared"
@@ -23,7 +19,7 @@
     {
       "label": "build: rf",
       "type": "shell",
-      "command": "go build -ldflags='-X main.version=dev' -o rf ./cmd/rf",
+      "command": "go build -ldflags='-X main.version=dev' -o rf ./cmd/repofleet",
       "presentation": {
         "reveal": "always",
         "panel": "shared"
@@ -37,7 +33,10 @@
         "build: rf"
       ],
       "dependsOrder": "parallel",
-      "group": "build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
       "presentation": {
         "reveal": "always",
         "panel": "shared"

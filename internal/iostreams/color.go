@@ -9,6 +9,7 @@ const (
 	reset     = "\033[0m"
 	bold      = "\033[1m"
 	dim       = "\033[2m"
+	red       = "\033[31m"
 	green     = "\033[32m"
 	boldGreen = "\033[1;32m"
 	cyan      = "\033[36m"
@@ -71,12 +72,13 @@ func Logo(version string) string {
 	rs := reset
 
 	wordmark := bg + "⟫ " + cy + "repo" + bg + "fleet" + rs + di + ver + rs
-	tagline  := di + "issue-centered multi-repo manager" + rs
+	tagline := di + "issue-centered multi-repo manager" + rs
 
 	return bg + "█▀█ █▀▀" + rs + "\n" +
 		bg + "█▀▄ █▀▀" + rs + "   " + wordmark + "\n" +
 		bg + "█ █ █  " + rs + "   " + tagline
 }
+
 
 func Bold(s string) string {
 	if !colorEnabled() {

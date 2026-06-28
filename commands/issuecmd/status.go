@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
+	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
 )
@@ -24,31 +25,40 @@ func newStatusCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(f.IO.Out, "Issue: %s   Branch: %s\n\n", ctx.ID, ctx.BranchSlug)
-			fmt.Fprintf(f.IO.Out, "%-30s %-25s %s\n", "REPO", "BRANCH", "CHANGES")
-			fmt.Fprintf(f.IO.Out, "%-30s %-25s %s\n", "----", "------", "-------")
+			fmt.Fprintf(f.IO.Out, "%s %s   %s %s\n\n",
+				iostreams.Dim("Issue:"), iostreams.Cyan(ctx.ID),
+				iostreams.Dim("Branch:"), iostreams.Cyan(ctx.BranchSlug),
+			)
 
 			paths := repoPaths(ctx.Repos)
-
-			// get current branch per repo
 			branchResults := f.GitRunner.Run(paths, "rev-parse", "--abbrev-ref", "HEAD")
-			// get short status per repo
 			statusResults := f.GitRunner.Run(paths, "status", "--short")
+
+			t := iostreams.NewTable()
+			t.AddField("Repo", iostreams.Dim)
+			t.AddField("Branch", iostreams.Dim)
+			t.AddField("Changes", iostreams.Dim)
+			t.EndRow()
 
 			for i, r := range ctx.Repos {
 				branch := "?"
 				if branchResults[i].Err == nil {
 					branch = strings.TrimSpace(branchResults[i].Stdout)
 				}
-				changes := "clean"
+				changes, changesColor := "clean", iostreams.Green
 				if statusResults[i].Err == nil {
-					lines := strings.TrimSpace(statusResults[i].Stdout)
-					if lines != "" {
+					if lines := strings.TrimSpace(statusResults[i].Stdout); lines != "" {
 						changes = fmt.Sprintf("%d change(s)", len(strings.Split(lines, "\n")))
+						changesColor = iostreams.Cyan
 					}
 				}
-				fmt.Fprintf(f.IO.Out, "%-30s %-25s %s\n", r.Name, branch, changes)
+				t.AddField(r.Name, iostreams.Cyan)
+				t.AddField(branch, iostreams.Dim)
+				t.AddField(changes, changesColor)
+				t.EndRow()
 			}
+
+			t.Render(f.IO.Out)
 			return nil
 		},
 	}
