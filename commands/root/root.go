@@ -32,6 +32,20 @@ func NewRootCmd(appVersion string) *cobra.Command {
 	cobra.AddTemplateFunc("colorFlags", func(flags *pflag.FlagSet) string {
 		return iostreams.ColorizeFlags(flags.FlagUsages())
 	})
+	cmdOrder := []string{"repo", "issue", "git"}
+	cobra.AddTemplateFunc("orderedCmds", func(cmds []*cobra.Command) []*cobra.Command {
+		index := make(map[string]*cobra.Command, len(cmds))
+		for _, c := range cmds {
+			index[c.Name()] = c
+		}
+		ordered := make([]*cobra.Command, 0, len(cmds))
+		for _, name := range cmdOrder {
+			if c, ok := index[name]; ok && c.IsAvailableCommand() {
+				ordered = append(ordered, c)
+			}
+		}
+		return ordered
+	})
 
 	binaryName := filepath.Base(os.Args[0])
 
@@ -46,7 +60,6 @@ func NewRootCmd(appVersion string) *cobra.Command {
 		},
 	}
 
-	// show logo as version output instead of plain text
 	cmd.SetVersionTemplate(iostreams.Logo(appVersion) + "\n\n")
 
 	cmd.SetHelpTemplate(
@@ -59,9 +72,9 @@ func NewRootCmd(appVersion string) *cobra.Command {
 
 			`{{if .HasAvailableSubCommands}}` +
 			`{{bold "Commands:"}}` + "\n" +
-			`{{range .Commands}}{{if .IsAvailableCommand}}` +
-			`  {{rpadColor .Name .NamePadding}} {{.Short}}` + "\n" +
-			`{{end}}{{end}}` + "\n" +
+			`{{range orderedCmds .Commands}}` +
+			`  {{rpadColor .Name $.NamePadding}} {{.Short}}` + "\n" +
+			`{{end}}` + "\n" +
 			`{{end}}` +
 
 			`{{if .HasAvailableLocalFlags}}` +
@@ -72,7 +85,6 @@ func NewRootCmd(appVersion string) *cobra.Command {
 			"\n",
 	)
 
-	// order: repo, issue, git
 	cmd.AddCommand(repo.NewCmd(f))
 	cmd.AddCommand(issuecmd.NewCmd(f))
 	cmd.AddCommand(gitcmd.NewCmd(f))

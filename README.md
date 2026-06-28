@@ -48,41 +48,6 @@ internal/                       business logic — compiler-enforced, not import
   └── iostreams/                injectable IO + ANSI color helpers
 ```
 
----
-
-## Design Patterns
-
-| Pattern | Where | Purpose |
-|---|---|---|
-| Dependency Injection | `commands/factory` | Commands receive all clients; never construct them |
-| Factory Method | `New*()` constructors | Hide initialization details from callers |
-| Repository | `config.Load/Save`, `issue.Load/Save` | Hide YAML/disk mechanics behind clean methods |
-| Facade | `git.Runner.Run()` | Hide concurrent multi-repo execution behind one call |
-| Command (Cobra) | every `commands/*/` | Each action is a self-contained `*cobra.Command` |
-| Value Object | `config.Repo`, `config.Workspace`, `issue.Context` | Plain data structs, serialized to YAML |
-
----
-
-## Data Flow
-
-### `repofleet git status`
-```
-main → root → factory.New()        load config from disk
-            → gitcmd.Run()         git status in all workspace repos (parallel)
-                                   print results per repo
-```
-
-### `repofleet issue switch PROJ-42`
-```
-main → root → issuecmd.switch
-    issue.Load("PROJ-42")          read ~/.config/repofleet/issues/PROJ-42.yaml
-    git.Runner.Run(paths,          parallel: git checkout <branch> in each repo
-        "checkout", branch)
-    issue.SetCurrent("PROJ-42")    write current_issue marker
-```
-
----
-
 ## Getting Started
 
 **Install Go** (if not already installed):
