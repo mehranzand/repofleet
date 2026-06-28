@@ -10,7 +10,6 @@ import (
 	"github.com/mehranzand/repofleet/commands/gitcmd"
 	"github.com/mehranzand/repofleet/commands/issuecmd"
 	"github.com/mehranzand/repofleet/commands/repo"
-	"github.com/mehranzand/repofleet/commands/version"
 	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -40,11 +39,15 @@ func NewRootCmd(appVersion string) *cobra.Command {
 		Use:          binaryName,
 		Short:        "Multi-repo Git workflow manager",
 		Long:         "\n" + iostreams.Logo(appVersion),
+		Version:      appVersion,
 		SilenceUsage: true,
 		CompletionOptions: cobra.CompletionOptions{
 			DisableDefaultCmd: true,
 		},
 	}
+
+	// show logo as version output instead of plain text
+	cmd.SetVersionTemplate(iostreams.Logo(appVersion) + "\n\n")
 
 	cmd.SetHelpTemplate(
 		`{{with .Long}}` +
@@ -66,15 +69,13 @@ func NewRootCmd(appVersion string) *cobra.Command {
 			`{{colorFlags .LocalFlags | trimRightSpace}}` + "\n" +
 			`{{end}}` +
 
-			`{{if .HasAvailableSubCommands}}` +
-			`Use "{{.CommandPath}} [command] --help" for more information.` + "\n" +
-			`{{end}}` + "\n",
+			"\n",
 	)
 
-	cmd.AddCommand(version.NewCmd(f, appVersion))
+	// order: repo, issue, git
 	cmd.AddCommand(repo.NewCmd(f))
-	cmd.AddCommand(gitcmd.NewCmd(f))
 	cmd.AddCommand(issuecmd.NewCmd(f))
+	cmd.AddCommand(gitcmd.NewCmd(f))
 
 	return cmd
 }

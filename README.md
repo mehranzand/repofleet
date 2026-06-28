@@ -10,7 +10,6 @@ When a feature spans multiple services, RepoFleet  lets you create one issue con
 
 ```
 repofleet
-├── version                        Print the version
 ├── repo
 │   ├── add <path>                 Add a repository to a workspace
 │   ├── remove <name>              Remove a repository from a workspace
@@ -38,7 +37,6 @@ cmd/repofleet/main.go           binary entry point; version via ldflags
 commands/                       Cobra CLI layer — parse flags, call internal, print output
   ├── root/                     wires factory + registers all subcommands
   ├── factory/                  dependency injection: Config, GitRunner, IO
-  ├── version/
   ├── repo/
   ├── gitcmd/
   └── issuecmd/
