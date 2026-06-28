@@ -1,0 +1,7 @@
+<svg width="900" height="220" viewBox="0 0 900 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="220" rx="24" fill="#0D1117"/>
+  <text x="70" y="92" font-family="Fira Code, JetBrains Mono, Consolas, monospace" font-size="46" font-weight="600" fill="#7EE787">⟫</text>
+  <text x="135" y="92" font-family="Fira Code, JetBrains Mono, Consolas, monospace" font-size="46" font-weight="700" fill="#2DD4BF">repo</text>
+  <text x="263" y="92" font-family="Fira Code, JetBrains Mono, Consolas, monospace" font-size="46" font-weight="700" fill="#39D353">fleet</text>
+  <text x="70" y="150" font-family="Fira Code, JetBrains Mono, Consolas, monospace" font-size="31" font-weight="500" fill="#6E7681">issue-centered multi-repo manager</text>
+</svg>

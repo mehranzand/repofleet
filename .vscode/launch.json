@@ -1,0 +1,45 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "repofleet version",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/repofleet",
+      "args": ["version"]
+    },
+    {
+      "name": "repofleet repo list",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/repofleet",
+      "args": ["repo", "list"]
+    },
+    {
+      "name": "repofleet repo add (edit args)",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/repofleet",
+      "args": ["repo", "add", "."]
+    },
+    {
+      "name": "repofleet git status",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/repofleet",
+      "args": ["git", "status"]
+    },
+    {
+      "name": "repofleet issue status",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/repofleet",
+      "args": ["issue", "status"]
+    }
+  ]
+}

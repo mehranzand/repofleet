@@ -1,0 +1,79 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "env": {
+      "PATH": "/usr/local/go/bin:${env:PATH}"
+    }
+  },
+  "tasks": [
+    {
+      "label": "build: repofleet",
+      "type": "shell",
+      "command": "go build -ldflags='-X main.version=dev' -o repofleet ./cmd/repofleet",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "build: rf",
+      "type": "shell",
+      "command": "go build -ldflags='-X main.version=dev' -o rf ./cmd/rf",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "build: all",
+      "dependsOn": [
+        "build: repofleet",
+        "build: rf"
+      ],
+      "dependsOrder": "parallel",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "go test -v -race ./...",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "vet",
+      "type": "shell",
+      "command": "go vet ./...",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "tidy",
+      "type": "shell",
+      "command": "go mod tidy",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}
