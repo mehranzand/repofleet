@@ -1,5 +1,23 @@
 <img src="assets/repofleet-logo.svg" alt="repofleet" width="480" />
 
+<p align="center">
+  <a href="https://github.com/mehranzand/repofleet/releases/latest">
+    <img src="https://img.shields.io/github/v/release/mehranzand/repofleet?style=flat-square" alt="Latest Release">
+  </a>
+  <a href="https://github.com/mehranzand/repofleet/actions/workflows/release.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/mehranzand/repofleet/release.yml?style=flat-square" alt="Build Status">
+  </a>
+  <a href="https://github.com/mehranzand/repofleet/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/mehranzand/repofleet?style=flat-square" alt="License">
+  </a>
+  <a href="https://github.com/mehranzand/homebrew-tap">
+    <img src="https://img.shields.io/badge/homebrew-available-orange?style=flat-square&logo=homebrew" alt="Homebrew">
+  </a>
+  <a href="https://github.com/mehranzand/scoop-bucket">
+    <img src="https://img.shields.io/badge/scoop-available-blue?style=flat-square&logo=windows" alt="Scoop">
+  </a>
+</p>
+
 RepoFleet is an issue-centered CLI tool for managing Git workflows across multiple repositories.
 
 When a feature spans multiple services, RepoFleet  lets you create one issue context, branch all repos together, run git commands across them in parallel, and track every open MR/PR — without switching directories.
