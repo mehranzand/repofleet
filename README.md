@@ -45,42 +45,43 @@ repofleet
 
 ---
 
-## Architecture
+## Installation
 
-Three layers — each with one job, depending only on the layer below.
+### Homebrew (macOS/Linux)
 
+```bash
+brew install mehranzand/tap/repofleet
 ```
-cmd/repofleet/main.go           binary entry point; version via ldflags
-        │
-commands/                       Cobra CLI layer — parse flags, call internal, print output
-  ├── root/                     wires factory + registers all subcommands
-  ├── factory/                  dependency injection: Config, GitRunner, IO
-  ├── repo/
-  ├── gitcmd/
-  └── issuecmd/
-        │
-internal/                       business logic — compiler-enforced, not importable outside
-  ├── config/                   Workspace + Repo types; YAML persistence (~/.config/repofleet/)
-  ├── issue/                    issue context entity; per-issue YAML state
-  ├── git/                      concurrent git runner (one goroutine per repo)
-  └── iostreams/                injectable IO + ANSI color helpers
+
+### Scoop (Windows)
+
+```powershell
+scoop bucket add mehranzand https://github.com/mehranzand/scoop-bucket
+scoop install repofleet
 ```
+
+### From source
+
+Requires Go 1.22+.
+
+```bash
+git clone https://github.com/mehranzand/repofleet
+cd repofleet
+go build -ldflags="-X main.version=dev" -o repofleet ./cmd/repofleet
+```
+
+---
 
 ## Getting Started
 
-**Install Go** (if not already installed):
+Add repos to a workspace, then create an issue context to work across all of them:
+
 ```bash
-wget https://go.dev/dl/go1.22.5.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.22.5.linux-amd64.tar.gz
+repofleet repo add ~/code/service-a
+repofleet repo add ~/code/service-b
+
+repofleet issue create JIRA-123
+repofleet issue status
 ```
 
-**Build:**
-```bash
-go mod tidy
-go build -ldflags="-X main.version=0.1.0" -o repofleet ./cmd/repofleet
-```
-
-**Run:**
-```bash
-./repofleet
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details and how to contribute.
