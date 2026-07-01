@@ -15,7 +15,7 @@ func newStatusCmd(f *factory.Factory) *cobra.Command {
 		Use:   "status",
 		Short: "Show dashboard for all repos in the current issue",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id := store.CurrentIssueID()
+			id := store.CurrentIssueID(f.Settings.CurrentWorkspace)
 			if id == "" {
 				return fmt.Errorf("no active issue — switch to one with: repofleet issue switch <id>")
 			}

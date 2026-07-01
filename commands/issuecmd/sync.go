@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mehranzand/repofleet/commands/factory"
+	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +16,7 @@ func newSyncCmd(f *factory.Factory) *cobra.Command {
 		Use:   "sync",
 		Short: "Fetch and pull/rebase all repos for the current issue",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id := store.CurrentIssueID()
+			id := store.CurrentIssueID(f.Settings.CurrentWorkspace)
 			if id == "" {
 				return fmt.Errorf("no active issue — switch to one with: repofleet issue switch <id>")
 			}
@@ -26,15 +27,15 @@ func newSyncCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			paths := repoPaths(ctx.Repos)
-			fmt.Fprintf(f.IO.Out, "Fetching %d repo(s)...\n\n", len(paths))
+			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Dim(fmt.Sprintf("Fetching %d repo(s)...", len(paths))))
 
 			fetchResults := f.GitRunner.Run(paths, "fetch", "--all")
 			for _, r := range fetchResults {
-				status := "ok"
 				if r.Err != nil {
-					status = "x " + r.Err.Error()
+					fmt.Fprintf(f.IO.Out, "  %s %s: %s\n", iostreams.Red("✗"), r.RepoPath, r.Err)
+				} else {
+					fmt.Fprintf(f.IO.Out, "  %s %s\n", iostreams.Green("✓"), r.RepoPath)
 				}
-				fmt.Fprintf(f.IO.Out, "  fetch %s  %s\n", r.RepoPath, status)
 			}
 
 			pullArgs := []string{"pull"}
@@ -42,13 +43,13 @@ func newSyncCmd(f *factory.Factory) *cobra.Command {
 				pullArgs = append(pullArgs, "--rebase")
 			}
 
-			fmt.Fprintf(f.IO.Out, "\nPulling %d repo(s)...\n\n", len(paths))
+			fmt.Fprintf(f.IO.Out, "\n%s\n\n", iostreams.Dim(fmt.Sprintf("Pulling %d repo(s)...", len(paths))))
 			pullResults := f.GitRunner.Run(paths, pullArgs...)
 			for _, r := range pullResults {
 				if r.Err != nil {
-					fmt.Fprintf(f.IO.Err, "  x %s: %s\n", r.RepoPath, r.Err)
+					fmt.Fprintf(f.IO.Out, "  %s %s: %s\n", iostreams.Red("✗"), r.RepoPath, r.Err)
 				} else {
-					fmt.Fprintf(f.IO.Out, "  ok %s\n", r.RepoPath)
+					fmt.Fprintf(f.IO.Out, "  %s %s\n", iostreams.Green("✓"), r.RepoPath)
 				}
 			}
 			return nil

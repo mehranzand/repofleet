@@ -1,85 +1,116 @@
 package store
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
-func configPath() string {
+func settingsPath() string {
 	base, _ := os.UserConfigDir()
-	return filepath.Join(base, "repofleet", "config.yaml")
+	return filepath.Join(base, "repofleet", "settings.yaml")
 }
 
-func Load() (*Config, error) {
-	path := configPath()
-	data, err := os.ReadFile(path)
+func workspacePath(name string) string {
+	base, _ := os.UserConfigDir()
+	return filepath.Join(base, "repofleet", "workspaces", name+".yaml")
+}
+
+func LoadSettings() (*Settings, error) {
+	data, err := os.ReadFile(settingsPath())
 	if os.IsNotExist(err) {
-		return &Config{CurrentWorkspace: "default", Workspaces: []Workspace{{Name: "default"}}}, nil
+		return &Settings{CurrentWorkspace: "default"}, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, err
-	}
-	return &cfg, nil
+	var s Settings
+	return &s, yaml.Unmarshal(data, &s)
 }
 
-func (c *Config) Save() error {
-	path := configPath()
+func (s *Settings) Save() error {
+	path := settingsPath()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
-	data, err := yaml.Marshal(c)
+	data, err := yaml.Marshal(s)
 	if err != nil {
 		return err
 	}
 	return os.WriteFile(path, data, 0o644)
 }
 
-func (c *Config) CurrentWS() *Workspace {
-	for i := range c.Workspaces {
-		if c.Workspaces[i].Name == c.CurrentWorkspace {
-			return &c.Workspaces[i]
-		}
+func LoadWorkspace(name string) (*Workspace, error) {
+	data, err := os.ReadFile(workspacePath(name))
+	if os.IsNotExist(err) {
+		return &Workspace{}, nil
 	}
-	c.Workspaces = append(c.Workspaces, Workspace{Name: c.CurrentWorkspace})
-	return &c.Workspaces[len(c.Workspaces)-1]
+	if err != nil {
+		return nil, err
+	}
+	var ws Workspace
+	return &ws, yaml.Unmarshal(data, &ws)
 }
 
-func (c *Config) WorkspaceRepos(wsName string) []Repo {
-	for i := range c.Workspaces {
-		if c.Workspaces[i].Name == wsName {
-			return c.Workspaces[i].Repos
+func DeleteWorkspace(name string) error {
+	path := workspacePath(name)
+	if err := os.Remove(path); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("workspace %q not found", name)
 		}
+		return err
 	}
 	return nil
 }
 
-func (c *Config) AddRepo(wsName string, repo Repo) {
-	for i := range c.Workspaces {
-		if c.Workspaces[i].Name == wsName {
-			c.Workspaces[i].Repos = append(c.Workspaces[i].Repos, repo)
-			return
-		}
+func (w *Workspace) Save() error {
+	path := workspacePath(w.Name)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
 	}
-	c.Workspaces = append(c.Workspaces, Workspace{Name: wsName, Repos: []Repo{repo}})
+	data, err := yaml.Marshal(w)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o644)
 }
 
-func (c *Config) RemoveRepo(wsName, repoName string) bool {
-	for i := range c.Workspaces {
-		if c.Workspaces[i].Name != wsName {
+func LoadWorkspaces() ([]*Workspace, error) {
+	base, _ := os.UserConfigDir()
+	dir := filepath.Join(base, "repofleet", "workspaces")
+	entries, err := os.ReadDir(dir)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var workspaces []*Workspace
+	for _, e := range entries {
+		if !strings.HasSuffix(e.Name(), ".yaml") {
 			continue
 		}
-		repos := c.Workspaces[i].Repos
-		for j, r := range repos {
-			if r.Name == repoName {
-				c.Workspaces[i].Repos = append(repos[:j], repos[j+1:]...)
-				return true
-			}
+		ws, err := LoadWorkspace(strings.TrimSuffix(e.Name(), ".yaml"))
+		if err != nil {
+			continue
+		}
+		workspaces = append(workspaces, ws)
+	}
+	return workspaces, nil
+}
+
+func (w *Workspace) AddRepo(repo Repo) {
+	w.Repos = append(w.Repos, repo)
+}
+
+func (w *Workspace) RemoveRepo(name string) bool {
+	for i, r := range w.Repos {
+		if r.Name == name {
+			w.Repos = append(w.Repos[:i], w.Repos[i+1:]...)
+			return true
 		}
 	}
 	return false

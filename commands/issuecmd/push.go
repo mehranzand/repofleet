@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mehranzand/repofleet/commands/factory"
+	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +16,7 @@ func newPushCmd(f *factory.Factory) *cobra.Command {
 		Use:   "push",
 		Short: "Push all issue branches to their remotes",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id := store.CurrentIssueID()
+			id := store.CurrentIssueID(f.Settings.CurrentWorkspace)
 			if id == "" {
 				return fmt.Errorf("no active issue — switch to one with: repofleet issue switch <id>")
 			}
@@ -31,13 +32,13 @@ func newPushCmd(f *factory.Factory) *cobra.Command {
 				pushArgs = append(pushArgs, "--force-with-lease")
 			}
 
-			fmt.Fprintf(f.IO.Out, "Pushing branch %q in %d repo(s)...\n\n", ctx.BranchSlug, len(paths))
+			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Dim(fmt.Sprintf("Pushing branch %q in %d repo(s)...", ctx.BranchSlug, len(paths))))
 			results := f.GitRunner.Run(paths, pushArgs...)
 			for _, r := range results {
 				if r.Err != nil {
-					fmt.Fprintf(f.IO.Err, "  x %s: %s\n", r.RepoPath, r.Err)
+					fmt.Fprintf(f.IO.Out, "  %s %s: %s\n", iostreams.Red("✗"), r.RepoPath, r.Err)
 				} else {
-					fmt.Fprintf(f.IO.Out, "  ok %s\n", r.RepoPath)
+					fmt.Fprintf(f.IO.Out, "  %s %s\n", iostreams.Green("✓"), r.RepoPath)
 				}
 			}
 			return nil

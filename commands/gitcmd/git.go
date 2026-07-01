@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
+	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +17,7 @@ func NewCmd(f *factory.Factory) *cobra.Command {
 		DisableFlagParsing: true,
 		Args:               cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ws := f.Config.CurrentWS()
+			ws := f.Workspace
 			if len(ws.Repos) == 0 {
 				return fmt.Errorf("no repos in workspace %q — add one with: repofleet repo add <path>", ws.Name)
 			}
@@ -26,19 +27,19 @@ func NewCmd(f *factory.Factory) *cobra.Command {
 				paths[i] = r.Path
 			}
 
-			fmt.Fprintf(f.IO.Out, "Running: git %s  [%d repos]\n\n", strings.Join(args, " "), len(paths))
+			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Dim(fmt.Sprintf("Running: git %s  [%d repos]", strings.Join(args, " "), len(paths))))
 
 			results := f.GitRunner.Run(paths, args...)
 			for _, r := range results {
-				fmt.Fprintf(f.IO.Out, "── %s\n", r.RepoPath)
+				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Cyan("── "+r.RepoPath))
 				if r.Err != nil {
-					fmt.Fprintf(f.IO.Err, "   ERROR: %s\n", r.Err)
+					fmt.Fprintf(f.IO.Out, "   %s %s\n", iostreams.Red("✗"), r.Err)
 				} else if strings.TrimSpace(r.Stdout) != "" {
 					for _, line := range strings.Split(strings.TrimRight(r.Stdout, "\n"), "\n") {
 						fmt.Fprintf(f.IO.Out, "   %s\n", line)
 					}
 				} else {
-					fmt.Fprintf(f.IO.Out, "   (no output)\n")
+					fmt.Fprintf(f.IO.Out, "   %s\n", iostreams.Dim("(no output)"))
 				}
 				fmt.Fprintln(f.IO.Out)
 			}

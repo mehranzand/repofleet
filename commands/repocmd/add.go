@@ -1,4 +1,4 @@
-package repo
+package repocmd
 
 import (
 	"fmt"
@@ -24,15 +24,15 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 		Short: "Add a repository to a workspace",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
-				return fmt.Errorf("%s", iostreams.Dim("missing required argument: <path>"))
+				return fmt.Errorf("missing required argument: <path>")
 			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			switch forge {
-			case "github", "gitlab":
+			switch store.Forge(forge) {
+			case store.ForgeGitHub, store.ForgeGitLab:
 			default:
-				return fmt.Errorf("%s", iostreams.Dim(fmt.Sprintf("invalid forge %q: must be github or gitlab", forge)))
+				return fmt.Errorf("invalid forge %q: must be github or gitlab", forge)
 			}
 
 			absPath, err := filepath.Abs(args[0])
@@ -41,18 +41,21 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			if _, err := os.Stat(absPath); os.IsNotExist(err) {
-				return fmt.Errorf("%s", iostreams.Dim("path does not exist: "+absPath))
+				return fmt.Errorf("path does not exist: %s", absPath)
 			} else if err != nil {
-				return fmt.Errorf("%s", iostreams.Dim("cannot access path: "+absPath))
+				return fmt.Errorf("cannot access path: %s", absPath)
 			}
 
 			if err := exec.Command("git", "-C", absPath, "rev-parse", "--git-dir").Run(); err != nil {
-				return fmt.Errorf("%s", iostreams.Dim("not a git repository: "+absPath))
+				return fmt.Errorf("not a git repository: %s", absPath)
 			}
 
-			ws := workspace
-			if ws == "" {
-				ws = f.Config.CurrentWorkspace
+			target := f.Workspace
+			if workspace != "" && workspace != f.Settings.CurrentWorkspace {
+				target, err = store.LoadWorkspace(workspace)
+				if err != nil {
+					return err
+				}
 			}
 
 			repoName := name
@@ -60,12 +63,12 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 				repoName = filepath.Base(absPath)
 			}
 
-			for _, r := range f.Config.WorkspaceRepos(ws) {
+			for _, r := range target.Repos {
 				if r.Name == repoName {
-					return fmt.Errorf("%s", iostreams.Dim(fmt.Sprintf("a repo named %q already exists in workspace %q", repoName, ws)))
+					return fmt.Errorf("a repo named %q already exists in workspace %q", repoName, target.Name)
 				}
 				if r.Path == absPath {
-					return fmt.Errorf("%s", iostreams.Dim(fmt.Sprintf("path %s is already added to workspace %q as %q", absPath, ws, r.Name)))
+					return fmt.Errorf("path %s is already added to workspace %q as %q", absPath, target.Name, r.Name)
 				}
 			}
 
@@ -77,29 +80,17 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 				}
 			}
 
-			repo := store.Repo{
+			target.AddRepo(store.Repo{
 				Name:  repoName,
 				Path:  absPath,
-				Forge: forge,
+				Forge: store.Forge(forge),
 				URL:   remoteURL,
-			}
-
-			f.Config.AddRepo(ws, repo)
-			if err := f.Config.Save(); err != nil {
+			})
+			if err := target.Save(); err != nil {
 				return err
 			}
 
-			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Green("✓")+" "+iostreams.Cyan(fmt.Sprintf("Added %q to workspace %q", repoName, ws)))
-
-			target := f.Config.CurrentWS()
-			if workspace != "" {
-				for i := range f.Config.Workspaces {
-					if f.Config.Workspaces[i].Name == workspace {
-						target = &f.Config.Workspaces[i]
-						break
-					}
-				}
-			}
+			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Green("✓")+" "+iostreams.Cyan(fmt.Sprintf("Added %q to workspace %q", repoName, target.Name)))
 			iostreams.PrintRepos(f.IO.Out, target.Repos)
 			return nil
 		},

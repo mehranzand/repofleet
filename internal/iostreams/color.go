@@ -40,6 +40,13 @@ func Cyan(s string) string {
 	return cyan + s + reset
 }
 
+func Red(s string) string {
+	if !colorEnabled() {
+		return s
+	}
+	return red + s + reset
+}
+
 func BoldGreen(s string) string {
 	if !colorEnabled() {
 		return s
@@ -54,8 +61,6 @@ func Dim(s string) string {
 	return dim + s + reset
 }
 
-// Logo returns the repofleet branded logo string for terminal output.
-// version is shown after the wordmark (pass empty string to omit).
 func Logo(version string) string {
 	ver := ""
 	if version != "" && version != "dev" {
@@ -87,7 +92,10 @@ func Bold(s string) string {
 	return bold + s + reset
 }
 
-// ColorizeFlags colorizes the -flag and --flag portions of cobra flag usage lines.
+func Success(msg string) string {
+	return Green("✓") + " " + Cyan(msg)
+}
+
 func ColorizeFlags(usage string) string {
 	if !colorEnabled() {
 		return usage

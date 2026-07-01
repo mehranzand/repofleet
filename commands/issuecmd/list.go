@@ -2,8 +2,6 @@ package issuecmd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
@@ -19,19 +17,13 @@ func newListCmd(f *factory.Factory) *cobra.Command {
 		Use:   "list",
 		Short: "List all issue contexts",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			base, _ := os.UserConfigDir()
-			dir := filepath.Join(base, "repofleet", "issues")
-
-			entries, err := os.ReadDir(dir)
-			if os.IsNotExist(err) {
-				fmt.Fprintln(f.IO.Out, iostreams.Dim("No issues found."))
-				return nil
-			}
+			ws := f.Settings.CurrentWorkspace
+			issues, err := store.LoadIssuesForWorkspace(ws)
 			if err != nil {
 				return err
 			}
 
-			currentID := store.CurrentIssueID()
+			currentID := store.CurrentIssueID(ws)
 
 			t := iostreams.NewTable()
 			t.AddField("Id", iostreams.Dim)
@@ -41,15 +33,7 @@ func newListCmd(f *factory.Factory) *cobra.Command {
 			t.EndRow()
 
 			found := false
-			for _, e := range entries {
-				if !strings.HasSuffix(e.Name(), ".yaml") {
-					continue
-				}
-				id := strings.TrimSuffix(e.Name(), ".yaml")
-				ctx, err := store.LoadIssue(id)
-				if err != nil {
-					continue
-				}
+			for _, ctx := range issues {
 				if !showArchived && ctx.Status == store.IssueStatusArchived {
 					continue
 				}
@@ -77,7 +61,7 @@ func newListCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			if !found {
-				fmt.Fprintln(f.IO.Out, iostreams.Dim("No issues found."))
+				fmt.Fprintln(f.IO.Out, iostreams.Dim("No issues in workspace "+ws))
 				return nil
 			}
 
