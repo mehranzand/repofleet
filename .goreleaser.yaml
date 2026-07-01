@@ -42,7 +42,7 @@ brews:
     repository:
       owner: mehranzand
       name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+      token: "{{ .Env.PACKAGES_GITHUB_TOKEN }}"
     directory: Formula
     homepage: "https://github.com/mehranzand/repofleet"
     description: "Issue-centered CLI tool for managing Git workflows across multiple repositories"
@@ -53,7 +53,7 @@ scoops:
     repository:
       owner: mehranzand
       name: scoop-bucket
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+      token: "{{ .Env.PACKAGES_GITHUB_TOKEN }}"
     directory: bucket
     homepage: "https://github.com/mehranzand/repofleet"
     description: "Issue-centered CLI tool for managing Git workflows across multiple repositories"
