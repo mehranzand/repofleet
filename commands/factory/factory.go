@@ -7,18 +7,27 @@ import (
 )
 
 type Factory struct {
-	Config    *store.Config
+	Settings  *store.Settings
+	Workspace *store.Workspace
 	GitRunner *git.Runner
 	IO        *iostreams.IOStreams
 }
 
 func New() (*Factory, error) {
-	cfg, err := store.Load()
+	if err := store.Initialize(); err != nil {
+		return nil, err
+	}
+	settings, err := store.LoadSettings()
+	if err != nil {
+		return nil, err
+	}
+	ws, err := store.LoadWorkspace(settings.CurrentWorkspace)
 	if err != nil {
 		return nil, err
 	}
 	return &Factory{
-		Config:    cfg,
+		Settings:  settings,
+		Workspace: ws,
 		GitRunner: git.NewRunner(),
 		IO:        iostreams.System(),
 	}, nil

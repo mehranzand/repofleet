@@ -1,4 +1,4 @@
-package repo
+package repocmd
 
 import (
 	"github.com/mehranzand/repofleet/commands/factory"

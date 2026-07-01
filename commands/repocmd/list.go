@@ -1,10 +1,11 @@
-package repo
+package repocmd
 
 import (
 	"fmt"
 
 	"github.com/mehranzand/repofleet/commands/factory"
 	"github.com/mehranzand/repofleet/internal/iostreams"
+	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -15,23 +16,17 @@ func newListCmd(f *factory.Factory) *cobra.Command {
 		Use:   "list",
 		Short: "List repositories in a workspace",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ws := workspace
-			if ws == "" {
-				ws = f.Config.CurrentWorkspace
-			}
-
-			target := f.Config.CurrentWS()
-			if workspace != "" {
-				for i := range f.Config.Workspaces {
-					if f.Config.Workspaces[i].Name == workspace {
-						target = &f.Config.Workspaces[i]
-						break
-					}
+			target := f.Workspace
+			if workspace != "" && workspace != f.Settings.CurrentWorkspace {
+				var err error
+				target, err = store.LoadWorkspace(workspace)
+				if err != nil {
+					return err
 				}
 			}
 
 			if len(target.Repos) == 0 {
-				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Dim("No repositories in workspace "+ws))
+				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Dim("No repositories in workspace "+target.Name))
 				return nil
 			}
 

@@ -9,7 +9,8 @@ import (
 	"github.com/mehranzand/repofleet/commands/factory"
 	"github.com/mehranzand/repofleet/commands/gitcmd"
 	"github.com/mehranzand/repofleet/commands/issuecmd"
-	"github.com/mehranzand/repofleet/commands/repo"
+	"github.com/mehranzand/repofleet/commands/repocmd"
+	"github.com/mehranzand/repofleet/commands/workspacecmd"
 	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -33,28 +34,14 @@ func NewRootCmd(appVersion string) *cobra.Command {
 	cobra.AddTemplateFunc("colorFlags", func(flags *pflag.FlagSet) string {
 		return iostreams.ColorizeFlags(flags.FlagUsages())
 	})
-	cmdOrder := []string{"repo", "issue", "git"}
-	cobra.AddTemplateFunc("orderedCmds", func(cmds []*cobra.Command) []*cobra.Command {
-		index := make(map[string]*cobra.Command, len(cmds))
+	cobra.AddTemplateFunc("availableCmds", func(cmds []*cobra.Command) []*cobra.Command {
+		available := make([]*cobra.Command, 0, len(cmds))
 		for _, c := range cmds {
-			index[c.Name()] = c
-		}
-		// apply fixed order for known top-level names
-		pinned := make(map[string]bool, len(cmdOrder))
-		ordered := make([]*cobra.Command, 0, len(cmds))
-		for _, name := range cmdOrder {
-			if c, ok := index[name]; ok && c.IsAvailableCommand() {
-				ordered = append(ordered, c)
-				pinned[name] = true
+			if c.IsAvailableCommand() {
+				available = append(available, c)
 			}
 		}
-		// append any remaining commands (subcommands of repo/issue/etc.) in original order
-		for _, c := range cmds {
-			if !pinned[c.Name()] && c.IsAvailableCommand() {
-				ordered = append(ordered, c)
-			}
-		}
-		return ordered
+		return available
 	})
 
 	binaryName := filepath.Base(os.Args[0])
@@ -69,6 +56,7 @@ func NewRootCmd(appVersion string) *cobra.Command {
 			DisableDefaultCmd: true,
 		},
 	}
+	cobra.EnableCommandSorting = false
 
 	cmd.SetVersionTemplate(iostreams.Logo(appVersion) + "\n\n")
 
@@ -85,7 +73,7 @@ func NewRootCmd(appVersion string) *cobra.Command {
 
 			`{{if .HasAvailableSubCommands}}` +
 			`{{green "Commands:"}}` + "\n" +
-			`{{range orderedCmds .Commands}}` +
+			`{{range availableCmds .Commands}}` +
 			`  {{rpadColor .Name $.NamePadding}} {{.Short}}` + "\n" +
 			`{{end}}` + "\n" +
 			`{{end}}` +
@@ -98,7 +86,8 @@ func NewRootCmd(appVersion string) *cobra.Command {
 			"\n",
 	)
 
-	cmd.AddCommand(repo.NewCmd(f))
+	cmd.AddCommand(workspacecmd.NewCmd(f))
+	cmd.AddCommand(repocmd.NewCmd(f))
 	cmd.AddCommand(issuecmd.NewCmd(f))
 	cmd.AddCommand(gitcmd.NewCmd(f))
 

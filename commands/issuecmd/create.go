@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
+	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
 )
@@ -34,7 +35,7 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 				slug = toBranchSlug(id)
 			}
 
-			ws := f.Config.CurrentWS()
+			ws := f.Workspace
 			repos := ws.Repos
 			if len(repoNames) > 0 {
 				repos = filterRepos(ws.Repos, repoNames)
@@ -45,6 +46,7 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 
 			ctx := &store.Issue{
 				ID:         id,
+				Workspace:  f.Settings.CurrentWorkspace,
 				BranchSlug: slug,
 				Repos:      repos,
 				Status:     store.IssueStatusActive,
@@ -52,22 +54,22 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			if err := ctx.Save(); err != nil {
 				return err
 			}
-			if err := store.SetCurrentIssue(id); err != nil {
+			if err := store.SetCurrentIssue(f.Settings.CurrentWorkspace, id); err != nil {
 				return err
 			}
 
 			paths := repoPaths(repos)
-			fmt.Fprintf(f.IO.Out, "Creating branch %q in %d repo(s)...\n\n", slug, len(paths))
+			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Dim(fmt.Sprintf("Creating branch %q in %d repo(s)...", slug, len(paths))))
 			results := f.GitRunner.Run(paths, "checkout", "-b", slug)
 			for _, r := range results {
 				if r.Err != nil {
-					fmt.Fprintf(f.IO.Err, "  x %s: %s\n", r.RepoPath, r.Err)
+					fmt.Fprintf(f.IO.Out, "  %s %s: %s\n", iostreams.Red("✗"), r.RepoPath, r.Err)
 				} else {
-					fmt.Fprintf(f.IO.Out, "  ok %s\n", r.RepoPath)
+					fmt.Fprintf(f.IO.Out, "  %s %s\n", iostreams.Green("✓"), r.RepoPath)
 				}
 			}
 
-			fmt.Fprintf(f.IO.Out, "\nIssue %q is now active on branch %q\n", id, slug)
+			fmt.Fprintf(f.IO.Out, "\n%s\n", iostreams.Success(fmt.Sprintf("Issue %q is now active on branch %q", id, slug)))
 			return nil
 		},
 	}
