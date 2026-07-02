@@ -13,5 +13,6 @@ func NewCmd(f *factory.Factory) *cobra.Command {
 	}
 	cmd.AddCommand(newSwitchCmd(f))
 	cmd.AddCommand(newRemoveCmd(f))
+	cmd.AddCommand(newConfigCmd(f))
 	return cmd
 }

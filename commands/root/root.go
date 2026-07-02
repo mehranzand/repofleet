@@ -27,6 +27,7 @@ func NewRootCmd(appVersion string) *cobra.Command {
 	cobra.AddTemplateFunc("green", iostreams.Green)
 	cobra.AddTemplateFunc("cyan", iostreams.Cyan)
 	cobra.AddTemplateFunc("bold", iostreams.Bold)
+	cobra.AddTemplateFunc("dim", iostreams.Dim)
 	cobra.AddTemplateFunc("rpadColor", func(s string, padding int) string {
 		padded := s + strings.Repeat(" ", padding-len(s))
 		return iostreams.Cyan(padded)
@@ -65,7 +66,7 @@ func NewRootCmd(appVersion string) *cobra.Command {
 		`{{logo}}` + "\n\n" +
 
 			`{{with .Long}}` +
-			`{{. | trimRightSpace}}` + "\n\n" +
+			`{{. | trimRightSpace | dim}}` + "\n\n" +
 			`{{end}}` +
 
 			`{{green "Usage:"}}` + "\n" +
