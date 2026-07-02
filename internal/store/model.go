@@ -14,7 +14,7 @@ type Workspace struct {
 type Repo struct {
 	Name  string `yaml:"name"`
 	Path  string `yaml:"path"`
-	Forge Forge  `yaml:"forge"`
+	Forge RepoForge `yaml:"forge"`
 	URL   string `yaml:"url"`
 }
 
@@ -22,6 +22,8 @@ type Issue struct {
 	ID               string      `yaml:"id"`
 	Name             string      `yaml:"name,omitempty"`
 	ShortDescription string      `yaml:"short_description,omitempty"`
+	Kind             IssueKind   `yaml:"kind,omitempty"`
+	ChangeType       IssueChangeType `yaml:"change_type,omitempty"`
 	Workspace        string      `yaml:"workspace"`
 	BranchSlug       string      `yaml:"branch_slug"`
 	Repos            []Repo      `yaml:"repos"`
@@ -29,14 +31,32 @@ type Issue struct {
 }
 
 // enums
-type Forge string
+type RepoForge string
 const (
-	ForgeGitHub Forge = "github"
-	ForgeGitLab Forge = "gitlab"
+	RepoForgeGitHub RepoForge = "github"
+	RepoForgeGitLab RepoForge = "gitlab"
 )
 
 type IssueStatus string
 const (
 	IssueStatusActive   IssueStatus = "active"
 	IssueStatusArchived IssueStatus = "archived"
+)
+
+type IssueKind string
+const (
+	IssueKindBug     IssueKind = "bug"
+	IssueKindFeature IssueKind = "feature"
+	IssueKindTask    IssueKind = "task"
+	IssueKindStory   IssueKind = "story"
+)
+
+type IssueChangeType string
+const (
+	IssueChangeTypeFeat     IssueChangeType = "feat"
+	IssueChangeTypeFix      IssueChangeType = "fix"
+	IssueChangeTypeChore    IssueChangeType = "chore"
+	IssueChangeTypeDocs     IssueChangeType = "docs"
+	IssueChangeTypeRefactor IssueChangeType = "refactor"
+	IssueChangeTypeTest     IssueChangeType = "test"
 )
