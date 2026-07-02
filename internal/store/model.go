@@ -6,8 +6,9 @@ type Settings struct {
 }
 
 type Workspace struct {
-	Name  string `yaml:"name"`
-	Repos []Repo `yaml:"repos"`
+	Name          string `yaml:"name"`
+	Repos         []Repo `yaml:"repos"`
+	BranchPattern string `yaml:"branch_pattern,omitempty"`
 }
 
 type Repo struct {
@@ -18,11 +19,13 @@ type Repo struct {
 }
 
 type Issue struct {
-	ID         string      `yaml:"id"`
-	Workspace  string      `yaml:"workspace"`
-	BranchSlug string      `yaml:"branch_slug"`
-	Repos      []Repo      `yaml:"repos"`
-	Status     IssueStatus `yaml:"status"`
+	ID               string      `yaml:"id"`
+	Name             string      `yaml:"name,omitempty"`
+	ShortDescription string      `yaml:"short_description,omitempty"`
+	Workspace        string      `yaml:"workspace"`
+	BranchSlug       string      `yaml:"branch_slug"`
+	Repos            []Repo      `yaml:"repos"`
+	Status           IssueStatus `yaml:"status"`
 }
 
 // enums
