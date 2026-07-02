@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,6 +26,22 @@ func LoadIssue(id string) (*Issue, error) {
 	}
 	var issue Issue
 	return &issue, yaml.Unmarshal(data, &issue)
+}
+
+func LoadIssueByIDOrName(wsName, query string) (*Issue, error) {
+	if issue, err := LoadIssue(query); err == nil && issue.Workspace == wsName {
+		return issue, nil
+	}
+	issues, err := LoadIssuesForWorkspace(wsName)
+	if err != nil {
+		return nil, err
+	}
+	for _, issue := range issues {
+		if strings.EqualFold(issue.Name, query) {
+			return issue, nil
+		}
+	}
+	return nil, fmt.Errorf("issue %q not found", query)
 }
 
 func (i *Issue) Save() error {

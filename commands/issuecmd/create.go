@@ -3,6 +3,7 @@ package issuecmd
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
@@ -14,6 +15,7 @@ import (
 var (
 	slugRe      = regexp.MustCompile(`[^a-z0-9/]+`)
 	multiDashRe = regexp.MustCompile(`-{2,}`)
+	nameRe      = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
 
 func toBranchSlug(s string) string {
@@ -94,6 +96,19 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ws := f.Workspace
 
+			issueID := args[0]
+			if _, err := strconv.Atoi(issueID); err != nil {
+				return fmt.Errorf("issue ID must be an integer (e.g. 123), got %q", issueID)
+			}
+			if name != "" {
+				if len(name) > 8 {
+					return fmt.Errorf("issue name must be 8 characters or fewer, got %d", len(name))
+				}
+				if !nameRe.MatchString(name) {
+					return fmt.Errorf("issue name must contain only letters, digits, hyphens, or underscores — no spaces or special characters")
+				}
+			}
+
 			if kind != "" {
 				validKinds := map[string]bool{"bug": true, "feature": true, "task": true, "story": true}
 				if !validKinds[kind] {
@@ -108,13 +123,26 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			issue := &store.Issue{
-				ID:               args[0],
+				ID:               issueID,
 				Name:             name,
 				ShortDescription: description,
 				Kind:             store.IssueKind(kind),
 				ChangeType:       store.IssueChangeType(changeType),
 				Workspace:        f.Settings.CurrentWorkspace,
 				Status:           store.IssueStatusActive,
+			}
+
+			existing, err := store.LoadIssuesForWorkspace(f.Settings.CurrentWorkspace)
+			if err != nil {
+				return err
+			}
+			for _, ex := range existing {
+				if strings.EqualFold(ex.ID, issue.ID) {
+					return fmt.Errorf("issue ID %q already exists in this workspace", issue.ID)
+				}
+				if issue.Name != "" && strings.EqualFold(ex.Name, issue.Name) {
+					return fmt.Errorf("issue name %q already exists in this workspace (ID: %s)", issue.Name, ex.ID)
+				}
 			}
 
 			issue.Repos = ws.Repos

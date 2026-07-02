@@ -38,11 +38,9 @@ repofleet
 │   └── list                       List repositories in the current workspace
 ├── git [git args...]              Run any git command across all workspace repos
 └── issue
-    ├── create <id>                Create an issue context across selected repos
-    ├── list                       List all issue contexts
-    ├── switch <id>                Switch all repos to the issue branch
+    ├── create <id>                Create an issue context (ID must be an integer)
+    ├── switch [id|name]           Switch to an issue interactively, by ID, or by name
     ├── sync                       Fetch and rebase all repos for the current issue
-    ├── push                       Push all issue branches to their remotes
     ├── status                     Show status dashboard for the current issue
     └── archive <id>               Archive a completed issue context
 ```
@@ -84,7 +82,7 @@ Add repos to a workspace, then create an issue context to work across all of the
 repofleet repo add ~/code/service-a
 repofleet repo add ~/code/service-b
 
-repofleet issue create JIRA-123
+repofleet issue create 123 --name login-fix --description "fix token refresh"
 repofleet issue status
 ```
 
