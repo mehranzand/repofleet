@@ -28,6 +28,10 @@ When a feature spans multiple services, RepoFleet  lets you create one issue con
 
 ```
 repofleet
+├── workspace
+│   ├── switch [name]              Switch to a workspace, or create one if it doesn't exist
+│   ├── remove <name>              Remove a workspace
+│   └── config                     View or update workspace configuration (e.g. --branch-pattern)
 ├── repo
 │   ├── add <path>                 Add a repository to a workspace
 │   ├── remove <name>              Remove a repository from a workspace
