@@ -15,7 +15,8 @@ var validTokens = map[string]bool{
 	"{issue}":       true,
 	"{name}":        true,
 	"{description}": true,
-	"{repo}":        true,
+	"{kind}":        true,
+	"{type}":        true,
 }
 
 var tokenRe = regexp.MustCompile(`\{[^}]+\}`)
@@ -26,7 +27,7 @@ func validateBranchPattern(pattern string) error {
 	}
 	for _, token := range tokenRe.FindAllString(pattern, -1) {
 		if !validTokens[token] {
-			return fmt.Errorf("unknown token %s — valid tokens: {workspace}, {issue}, {name}, {description}, {repo}", token)
+			return fmt.Errorf("unknown token %s — valid tokens: {workspace}, {issue}, {name}, {description}, {kind}, {type}", token)
 		}
 	}
 	return nil
@@ -44,8 +45,9 @@ func newConfigCmd(f *factory.Factory) *cobra.Command {
 			"  {issue}        Issue.ID\n" +
 			"  {name}         Issue.Name\n" +
 			"  {description}  Issue.ShortDescription\n" +
-			"  {repo}         Repo.Name\n\n" +
-			"Example: feat/{issue}-{description}",
+			"  {kind}         Issue.Kind       (bug | feature | task | story)\n" +
+			"  {type}         Issue.ChangeType (feat | fix | chore | docs | refactor | test)\n" +
+			"Example: {type}/{issue}-{description}",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ws := f.Workspace
 
@@ -61,7 +63,6 @@ func newConfigCmd(f *factory.Factory) *cobra.Command {
 				return nil
 			}
 
-			// show current config
 			fmt.Fprintf(f.IO.Out, "%s  %s\n", iostreams.Dim("Workspace:"), iostreams.Cyan(ws.Name))
 
 			if ws.BranchPattern != "" {

@@ -29,8 +29,8 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			switch store.Forge(forge) {
-			case store.ForgeGitHub, store.ForgeGitLab:
+			switch store.RepoForge(forge) {
+			case store.RepoForgeGitHub, store.RepoForgeGitLab:
 			default:
 				return fmt.Errorf("invalid forge %q: must be github or gitlab", forge)
 			}
@@ -83,7 +83,7 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 			target.AddRepo(store.Repo{
 				Name:  repoName,
 				Path:  absPath,
-				Forge: store.Forge(forge),
+				Forge: store.RepoForge(forge),
 				URL:   remoteURL,
 			})
 			if err := target.Save(); err != nil {
