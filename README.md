@@ -86,14 +86,107 @@ go build -ldflags="-X main.version=dev" -o rf ./cmd/repofleet
 
 ## Getting Started
 
-Add repos to a workspace, then create an issue context to work across all of them:
+### 1. Set up a workspace
+
+A workspace groups your repos together. A `default` workspace is created automatically on first run. Switch to it or create a new one:
 
 ```bash
-repofleet repo add ~/code/service-a
-repofleet repo add ~/code/service-b
-
-repofleet issue create 123 --name login-fix --description "fix token refresh"
-repofleet issue status
+rf workspace switch default        # use the default workspace
+rf workspace switch my-feature     # create and switch to a new workspace
 ```
+
+### 2. Add repositories
+
+Add each repo that belongs to this workspace. The forge (GitHub/GitLab) is auto-detected from the remote URL:
+
+```bash
+rf repo add ~/code/service-a
+rf repo add ~/code/service-b
+rf repo list                       # verify what's in the workspace
+```
+
+### 3. (Optional) Set a branch naming pattern
+
+Define how branches are named when you create an issue. Available tokens:
+`{workspace}` `{issue}` `{name}` `{description}` `{kind}` `{type}` `{repo}`
+
+```bash
+rf workspace config --branch-pattern "{type}/{issue}-{name}"
+rf workspace config                # view current settings
+```
+
+### 4. Create an issue context
+
+The issue ID must be an integer. Name is optional (max 8 chars, no spaces):
+
+```bash
+rf issue create 123 --name auth-fix --description "fix token refresh" --kind bug --type fix
+```
+
+This creates a branch in all workspace repos using the configured pattern. To save the context without creating branches:
+
+```bash
+rf issue create 456 --name dashboard --skip-branch
+```
+
+To limit to specific repos:
+
+```bash
+rf issue create 789 --name api-work --repo service-a --repo service-b
+```
+
+### 5. Work across repos
+
+Check status of all repos for the current issue:
+
+```bash
+rf issue status
+```
+
+Run any git command across all repos at once:
+
+```bash
+rf git status
+rf git add -A
+rf git commit -m "feat: initial implementation"
+rf git push origin HEAD
+```
+
+### 6. Switch between issues
+
+Pick interactively from the list (current issue shown first):
+
+```bash
+rf issue switch
+```
+
+Or switch directly by ID or name:
+
+```bash
+rf issue switch 123
+rf issue switch auth-fix
+```
+
+To include archived issues in the list:
+
+```bash
+rf issue switch --archived
+```
+
+### 7. Sync and wrap up
+
+Fetch and rebase all repos to stay up to date:
+
+```bash
+rf issue sync
+```
+
+When an issue is done, archive it:
+
+```bash
+rf issue archive 123
+```
+
+---
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details and how to contribute.
