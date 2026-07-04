@@ -82,7 +82,7 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 	var kind string
 	var changeType string
 	var repoNames []string
-	var noBranch bool
+	var skipBranch bool
 
 	cmd := &cobra.Command{
 		Use:   "create <issue-id>",
@@ -147,13 +147,17 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 
 			issue.Repos = ws.Repos
 			if len(repoNames) > 0 {
-				issue.Repos = filterRepos(ws.Repos, repoNames)
+				filtered, err := filterRepos(ws.Repos, repoNames)
+				if err != nil {
+					return err
+				}
+				issue.Repos = filtered
 			}
 			if len(issue.Repos) == 0 {
-				return fmt.Errorf("no repos selected — add repos with: rf repo add <path>")
+				return fmt.Errorf("no repos in current workspace — add one with: rf repo add <path>")
 			}
 
-			if !noBranch {
+			if !skipBranch {
 				slug, err := resolveBranchSlug(branch, ws, issue)
 				if err != nil {
 					return err
@@ -168,8 +172,8 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if noBranch {
-				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Success(fmt.Sprintf("Issue %q created (no branch)", issue.ID)))
+			if skipBranch {
+				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Success(fmt.Sprintf("Issue %q created (branch skipped)", issue.ID)))
 				return nil
 			}
 
@@ -195,6 +199,6 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&kind, "kind", "", "issue kind: bug, feature, task, story (used in {kind} token)")
 	cmd.Flags().StringVar(&changeType, "type", "", "change type: feat, fix, chore, docs, refactor, test (used in {type} token)")
 	cmd.Flags().StringArrayVarP(&repoNames, "repo", "r", nil, "repos to include (default: all in workspace)")
-	cmd.Flags().BoolVar(&noBranch, "no-branch", false, "save issue context without creating git branches")
+	cmd.Flags().BoolVar(&skipBranch, "skip-branch", false, "save issue context without creating a git branch")
 	return cmd
 }

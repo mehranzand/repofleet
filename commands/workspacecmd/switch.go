@@ -2,6 +2,7 @@ package workspacecmd
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 
 	"github.com/manifoldco/promptui"
@@ -10,6 +11,18 @@ import (
 	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
 )
+
+var workspaceNameRe = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+
+func validateWorkspaceName(name string) error {
+	if name == "" {
+		return fmt.Errorf("workspace name cannot be empty")
+	}
+	if !workspaceNameRe.MatchString(name) {
+		return fmt.Errorf("workspace name %q is invalid — use only letters, numbers, hyphens, and underscores", name)
+	}
+	return nil
+}
 
 type workspaceItem struct {
 	Name    string
@@ -28,6 +41,9 @@ func newSwitchCmd(f *factory.Factory) *cobra.Command {
 
 			if len(args) == 1 {
 				name = args[0]
+				if err := validateWorkspaceName(name); err != nil {
+					return err
+				}
 			} else {
 				selected, err := promptWorkspace(f)
 				if err != nil {
@@ -85,7 +101,8 @@ func promptWorkspace(f *factory.Factory) (string, error) {
 
 	if len(workspaces) == 0 {
 		prompt := promptui.Prompt{
-			Label: "No workspaces found. Enter a name to create one",
+			Label:    "No workspaces found. Enter a name to create one",
+			Validate: validateWorkspaceName,
 		}
 		result, err := prompt.Run()
 		if err != nil || result == "" {

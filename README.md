@@ -30,16 +30,26 @@ When a feature spans multiple services, RepoFleet  lets you create one issue con
 repofleet
 ├── workspace
 │   ├── switch [name]              Switch to a workspace, or create one if it doesn't exist
+│   │                              Name must be letters, numbers, hyphens, or underscores
 │   ├── remove <name>              Remove a workspace
-│   └── config                     View or update workspace configuration (e.g. --branch-pattern)
+│   └── config                     View or update workspace configuration
+│                                  --branch-pattern  set branch naming pattern
 ├── repo
-│   ├── add <path>                 Add a repository to a workspace
-│   ├── remove <name>              Remove a repository from a workspace
+│   ├── add <path>                 Add a repository to the current workspace
+│   │                              Forge is auto-detected from remote URL (--forge to override)
+│   ├── remove <name>              Remove a repository from the current workspace
 │   └── list                       List repositories in the current workspace
 ├── git [git args...]              Run any git command across all workspace repos
 └── issue
     ├── create <id>                Create an issue context (ID must be an integer)
+    │                              --name         short internal name (max 8 chars, no spaces)
+    │                              --description  short description
+    │                              --kind         bug | feature | task | story
+    │                              --type         feat | fix | chore | docs | refactor | test
+    │                              --repo         limit to specific repos (default: all in workspace)
+    │                              --skip-branch  save context without creating a git branch
     ├── switch [id|name]           Switch to an issue interactively, by ID, or by name
+    │                              --archived     include archived issues in the list
     ├── sync                       Fetch and rebase all repos for the current issue
     ├── status                     Show status dashboard for the current issue
     └── archive <id>               Archive a completed issue context
@@ -69,7 +79,7 @@ Requires Go 1.22+.
 ```bash
 git clone https://github.com/mehranzand/repofleet
 cd repofleet
-go build -ldflags="-X main.version=dev" -o repofleet ./cmd/repofleet
+go build -ldflags="-X main.version=dev" -o rf ./cmd/repofleet
 ```
 
 ---

@@ -13,15 +13,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func detectForge(remoteURL string) (store.RepoForge, bool) {
+	u := strings.ToLower(remoteURL)
+	if strings.Contains(u, "gitlab") {
+		return store.RepoForgeGitLab, true
+	}
+	if strings.Contains(u, "github") {
+		return store.RepoForgeGitHub, true
+	}
+	return "", false
+}
+
 func newAddCmd(f *factory.Factory) *cobra.Command {
 	var name string
 	var forge string
 	var url string
-	var workspace string
 
 	cmd := &cobra.Command{
 		Use:   "add <path>",
-		Short: "Add a repository to a workspace",
+		Short: "Add a repository to the current workspace",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				return fmt.Errorf("missing required argument: <path>")
@@ -29,12 +39,6 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			switch store.RepoForge(forge) {
-			case store.RepoForgeGitHub, store.RepoForgeGitLab:
-			default:
-				return fmt.Errorf("invalid forge %q: must be github or gitlab", forge)
-			}
-
 			absPath, err := filepath.Abs(args[0])
 			if err != nil {
 				return err
@@ -51,12 +55,6 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			target := f.Workspace
-			if workspace != "" && workspace != f.Settings.CurrentWorkspace {
-				target, err = store.LoadWorkspace(workspace)
-				if err != nil {
-					return err
-				}
-			}
 
 			repoName := name
 			if repoName == "" {
@@ -80,10 +78,26 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 				}
 			}
 
+			var resolvedForge store.RepoForge
+			if forge != "" {
+				switch store.RepoForge(forge) {
+				case store.RepoForgeGitHub, store.RepoForgeGitLab:
+					resolvedForge = store.RepoForge(forge)
+				default:
+					return fmt.Errorf("invalid --forge %q: must be github or gitlab", forge)
+				}
+			} else {
+				detected, ok := detectForge(remoteURL)
+				if !ok {
+					return fmt.Errorf("could not detect forge from remote URL — use --forge github or --forge gitlab")
+				}
+				resolvedForge = detected
+			}
+
 			target.AddRepo(store.Repo{
 				Name:  repoName,
 				Path:  absPath,
-				Forge: store.RepoForge(forge),
+				Forge: resolvedForge,
 				URL:   remoteURL,
 			})
 			if err := target.Save(); err != nil {
@@ -97,9 +111,8 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&name, "name", "n", "", "name for the repo (default: directory basename)")
-	cmd.Flags().StringVarP(&forge, "forge", "f", "github", `forge type: "github" or "gitlab"`)
-	cmd.Flags().StringVarP(&url, "url", "u", "", "remote URL of the repository")
-	cmd.Flags().StringVarP(&workspace, "workspace", "w", "", "target workspace (default: current)")
+	cmd.Flags().StringVarP(&forge, "forge", "f", "", "override forge type: github or gitlab (default: auto-detected from remote URL)")
+	cmd.Flags().StringVarP(&url, "url", "u", "", "remote URL (default: git remote get-url origin)")
 
 	return cmd
 }
