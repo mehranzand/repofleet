@@ -10,7 +10,6 @@ func Initialize() error {
 	dirs := []string{
 		filepath.Join(base, "repofleet", "workspaces"),
 		filepath.Join(base, "repofleet", "issues"),
-		filepath.Join(base, "repofleet", "active"),
 	}
 	for _, d := range dirs {
 		if err := os.MkdirAll(d, 0o755); err != nil {

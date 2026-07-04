@@ -12,10 +12,41 @@ type Workspace struct {
 }
 
 type Repo struct {
-	Name  string `yaml:"name"`
-	Path  string `yaml:"path"`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	Name  string    `yaml:"name"`
+	Path  string    `yaml:"path"`
 	Forge RepoForge `yaml:"forge"`
-	URL   string `yaml:"url"`
+	URL   string    `yaml:"url"`
 }
 
 type Issue struct {

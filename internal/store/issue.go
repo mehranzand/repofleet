@@ -9,15 +9,28 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func CurrentIssueID(_ string) string {
+	s, err := LoadSettings()
+	if err != nil {
+		return ""
+	}
+	return s.CurrentIssue
+}
+
+func SetCurrentIssue(_ string, id string) error {
+	s, err := LoadSettings()
+	if err != nil {
+		return err
+	}
+	s.CurrentIssue = id
+	return s.Save()
+}
+
 func issuePath(id string) string {
 	base, _ := os.UserConfigDir()
 	return filepath.Join(base, "repofleet", "issues", id+".yaml")
 }
 
-func activePath(wsName string) string {
-	base, _ := os.UserConfigDir()
-	return filepath.Join(base, "repofleet", "active", wsName)
-}
 
 func LoadIssue(id string) (*Issue, error) {
 	data, err := os.ReadFile(issuePath(id))
@@ -82,22 +95,12 @@ func LoadIssuesForWorkspace(wsName string) ([]*Issue, error) {
 	return issues, nil
 }
 
-func CurrentIssueID(wsName string) string {
-	data, err := os.ReadFile(activePath(wsName))
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(data))
-}
-
-func SetCurrentIssue(wsName, id string) error {
-	path := activePath(wsName)
-	if id == "" {
-		_ = os.Remove(path)
-		return nil
-	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+func DeleteIssue(wsName, id string) error {
+	if err := os.Remove(issuePath(id)); err != nil {
 		return err
 	}
-	return os.WriteFile(path, []byte(id), 0o644)
+	if CurrentIssueID(wsName) == id {
+		_ = SetCurrentIssue(wsName, "")
+	}
+	return nil
 }

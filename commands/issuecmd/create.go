@@ -157,7 +157,12 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 				return fmt.Errorf("no repos in current workspace — add one with: rf repo add <path>")
 			}
 
-			if !skipBranch {
+			if skipBranch {
+				results := f.GitRunner.Run([]string{issue.Repos[0].Path}, "rev-parse", "--abbrev-ref", "HEAD")
+				if len(results) > 0 && results[0].Err == nil {
+					issue.BranchSlug = strings.TrimSpace(results[0].Stdout)
+				}
+			} else {
 				slug, err := resolveBranchSlug(branch, ws, issue)
 				if err != nil {
 					return err
@@ -173,7 +178,7 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			if skipBranch {
-				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Success(fmt.Sprintf("Issue %q created (branch skipped)", issue.ID)))
+				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Success(fmt.Sprintf("Issue %q created, tracking existing branches", issue.ID)))
 				return nil
 			}
 
