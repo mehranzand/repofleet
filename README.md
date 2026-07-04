@@ -50,6 +50,11 @@ repofleet
     │                              --skip-branch  save context without creating a git branch
     ├── switch [id|name]           Switch to an issue interactively, by ID, or by name
     │                              --archived     include archived issues in the list
+    ├── repo
+    │   ├── add <repo-name>        Add a repo to the current issue (creates or switches branch)
+    │   └── remove <repo-name>     Remove a repo from the current issue
+    │                              Deletes branch if clean; warns if uncommitted changes exist
+    │                              Protected branches (main, master) are never deleted
     ├── sync                       Fetch and rebase all repos for the current issue
     ├── status                     Show status dashboard for the current issue
     ├── remove <id>                Remove an issue context (does not delete git branches)
@@ -124,11 +129,13 @@ The issue ID must be an integer. Name is optional (max 8 chars, no spaces):
 rf issue create 123 --name auth-fix --description "fix token refresh" --kind bug --type fix
 ```
 
-This creates a branch in all workspace repos using the configured pattern. To save the context without creating branches:
+This creates a branch in all workspace repos using the configured pattern. To track existing branches without creating new ones:
 
 ```bash
 rf issue create 456 --name dashboard --skip-branch
 ```
+
+With `--skip-branch`, each repo's current checked-out branch is captured as the issue branch.
 
 To limit to specific repos:
 
@@ -136,7 +143,16 @@ To limit to specific repos:
 rf issue create 789 --name api-work --repo service-a --repo service-b
 ```
 
-### 5. Work across repos
+### 5. Manage repos in an issue
+
+Add or remove repos from the active issue after creation:
+
+```bash
+rf issue repo add service-c        # creates branch if new, switches if exists
+rf issue repo remove service-c     # removes repo; deletes branch if clean
+```
+
+### 6. Work across repos
 
 Check status of all repos for the current issue:
 
@@ -153,7 +169,7 @@ rf git commit -m "feat: initial implementation"
 rf git push origin HEAD
 ```
 
-### 6. Switch between issues
+### 7. Switch between issues
 
 Pick interactively from the list (current issue shown first):
 
@@ -174,7 +190,7 @@ To include archived issues in the list:
 rf issue switch --archived
 ```
 
-### 7. Sync and wrap up
+### 8. Sync and wrap up
 
 Fetch and rebase all repos to stay up to date:
 
