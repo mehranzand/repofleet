@@ -52,6 +52,7 @@ repofleet
     │                              --archived     include archived issues in the list
     ├── sync                       Fetch and rebase all repos for the current issue
     ├── status                     Show status dashboard for the current issue
+    ├── remove <id>                Remove an issue context (does not delete git branches)
     └── archive <id>               Archive a completed issue context
 ```
 
