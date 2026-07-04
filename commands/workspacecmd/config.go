@@ -59,7 +59,7 @@ func newConfigCmd(f *factory.Factory) *cobra.Command {
 				if err := ws.Save(); err != nil {
 					return err
 				}
-				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Success(fmt.Sprintf("Branch pattern set to %q", branchPattern)))
+				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Success(fmt.Sprintf("Branch pattern set to %q for workspace %q", branchPattern, ws.Name)))
 				return nil
 			}
 

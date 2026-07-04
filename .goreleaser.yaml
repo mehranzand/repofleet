@@ -7,7 +7,7 @@ before:
 builds:
   - id: repofleet
     main: ./cmd/repofleet
-    binary: repofleet
+    binary: rf
     env:
       - CGO_ENABLED=0
     goos:
