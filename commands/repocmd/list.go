@@ -15,7 +15,7 @@ func newListCmd(f *factory.Factory) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ws := f.Workspace
 
-			fmt.Fprintf(f.IO.Out, "%s %s\n\n", iostreams.Dim("Workspace:"), iostreams.Cyan(ws.Name))
+			fmt.Fprintf(f.IO.Out, "%s %s\n\n", iostreams.Dim("Repos in workspace"), iostreams.Cyan(ws.Name))
 
 			if len(ws.Repos) == 0 {
 				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Dim("No repositories — add one with: rf repo add <path>"))

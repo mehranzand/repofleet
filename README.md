@@ -56,6 +56,8 @@ repofleet
     │                              Protected branches (main, master) are never deleted
     ├── sync                       Fetch and rebase all repos for the current issue
     ├── status                     Show status dashboard for the current issue
+    │                              Columns: Repo, Checkout, Commit, Age, HEAD±
+    │                              --go-to  interactive selector to cd into a repo
     ├── remove <id>                Remove an issue context (does not delete git branches)
     └── archive <id>               Archive a completed issue context
 ```
@@ -158,6 +160,14 @@ Check status of all repos for the current issue:
 ```bash
 rf issue status
 ```
+
+To interactively select a repo and `cd` into it:
+
+```bash
+rf issue status --go-to
+```
+
+> Shell integration is set up automatically on first run. When prompted, run `source ~/.zshrc` (or your shell's rc file) once to activate it. After that, `rf issue status --go-to` changes your working directory on selection.
 
 ### 7. Switch between issues
 
