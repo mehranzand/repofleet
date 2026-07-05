@@ -16,7 +16,7 @@ func newSyncCmd(f *factory.Factory) *cobra.Command {
 		Use:   "sync",
 		Short: "Fetch and pull/rebase all repos for the current issue",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id := store.CurrentIssueID(f.Settings.CurrentWorkspace)
+			id := store.CurrentIssueID(f.Workspace.Name)
 			if id == "" {
 				return fmt.Errorf("no active issue — switch to one with: repofleet issue switch <id>")
 			}

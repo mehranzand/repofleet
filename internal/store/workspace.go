@@ -9,38 +9,47 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func settingsPath() string {
-	base, _ := os.UserConfigDir()
-	return filepath.Join(base, "repofleet", "settings.yaml")
-}
-
 func workspacePath(name string) string {
 	base, _ := os.UserConfigDir()
 	return filepath.Join(base, "repofleet", "workspaces", name+".yaml")
 }
 
-func LoadSettings() (*Settings, error) {
-	data, err := os.ReadFile(settingsPath())
-	if os.IsNotExist(err) {
-		return &Settings{CurrentWorkspace: "default"}, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	var s Settings
-	return &s, yaml.Unmarshal(data, &s)
+func currentWorkspaceFile() string {
+	base, _ := os.UserConfigDir()
+	return filepath.Join(base, "repofleet", "workspaces", ".current")
 }
 
-func (s *Settings) Save() error {
-	path := settingsPath()
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	data, err := yaml.Marshal(s)
+func currentIssueFile(wsName string) string {
+	base, _ := os.UserConfigDir()
+	return filepath.Join(base, "repofleet", "workspaces", wsName+".current")
+}
+
+func CurrentWorkspaceName() string {
+	data, err := os.ReadFile(currentWorkspaceFile())
 	if err != nil {
-		return err
+		return "default"
 	}
-	return os.WriteFile(path, data, 0o644)
+	return strings.TrimSpace(string(data))
+}
+
+func SetCurrentWorkspace(name string) error {
+	return os.WriteFile(currentWorkspaceFile(), []byte(name), 0o644)
+}
+
+func CurrentIssueID(wsName string) string {
+	data, err := os.ReadFile(currentIssueFile(wsName))
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
+}
+
+func SetCurrentIssue(wsName, id string) error {
+	if id == "" {
+		_ = os.Remove(currentIssueFile(wsName))
+		return nil
+	}
+	return os.WriteFile(currentIssueFile(wsName), []byte(id), 0o644)
 }
 
 func LoadWorkspace(name string) (*Workspace, error) {
@@ -56,6 +65,7 @@ func LoadWorkspace(name string) (*Workspace, error) {
 }
 
 func DeleteWorkspace(name string) error {
+	_ = os.Remove(currentIssueFile(name))
 	path := workspacePath(name)
 	if err := os.Remove(path); err != nil {
 		if os.IsNotExist(err) {

@@ -7,7 +7,6 @@ import (
 )
 
 type Factory struct {
-	Settings  *store.Settings
 	Workspace *store.Workspace
 	GitRunner *git.Runner
 	IO        *iostreams.IOStreams
@@ -17,16 +16,15 @@ func New() (*Factory, error) {
 	if err := store.Initialize(); err != nil {
 		return nil, err
 	}
-	settings, err := store.LoadSettings()
+	wsName := store.CurrentWorkspaceName()
+	ws, err := store.LoadWorkspace(wsName)
 	if err != nil {
 		return nil, err
 	}
-	ws, err := store.LoadWorkspace(settings.CurrentWorkspace)
-	if err != nil {
-		return nil, err
+	if ws.Name == "" {
+		ws.Name = wsName
 	}
 	return &Factory{
-		Settings:  settings,
 		Workspace: ws,
 		GitRunner: git.NewRunner(),
 		IO:        iostreams.System(),

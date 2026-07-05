@@ -1,10 +1,5 @@
 package store
 
-type Settings struct {
-	CurrentWorkspace string `yaml:"current_workspace"`
-	CurrentIssue     string `yaml:"current_issue,omitempty"`
-}
-
 type Workspace struct {
 	Name          string `yaml:"name"`
 	Repos         []Repo `yaml:"repos"`
@@ -12,37 +7,6 @@ type Workspace struct {
 }
 
 type Repo struct {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
 	Name  string    `yaml:"name"`
 	Path  string    `yaml:"path"`
 	Forge RepoForge `yaml:"forge"`

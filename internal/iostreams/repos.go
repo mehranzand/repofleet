@@ -1,19 +1,10 @@
 package iostreams
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/mehranzand/repofleet/internal/store"
 )
-
-func PrintReposOrEmpty(w io.Writer, repos []store.Repo, emptyMsg string) {
-	if len(repos) == 0 {
-		fmt.Fprintf(w, "%s\n", Dim(emptyMsg))
-		return
-	}
-	PrintRepos(w, repos)
-}
 
 func PrintRepos(w io.Writer, repos []store.Repo) {
 	t := NewTable()

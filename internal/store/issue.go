@@ -9,23 +9,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func CurrentIssueID(_ string) string {
-	s, err := LoadSettings()
-	if err != nil {
-		return ""
-	}
-	return s.CurrentIssue
-}
-
-func SetCurrentIssue(_ string, id string) error {
-	s, err := LoadSettings()
-	if err != nil {
-		return err
-	}
-	s.CurrentIssue = id
-	return s.Save()
-}
-
 func issuePath(id string) string {
 	base, _ := os.UserConfigDir()
 	return filepath.Join(base, "repofleet", "issues", id+".yaml")

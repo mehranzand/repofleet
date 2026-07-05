@@ -128,11 +128,11 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 				ShortDescription: description,
 				Kind:             store.IssueKind(kind),
 				ChangeType:       store.IssueChangeType(changeType),
-				Workspace:        f.Settings.CurrentWorkspace,
+				Workspace:        f.Workspace.Name,
 				Status:           store.IssueStatusActive,
 			}
 
-			existing, err := store.LoadIssuesForWorkspace(f.Settings.CurrentWorkspace)
+			existing, err := store.LoadIssuesForWorkspace(f.Workspace.Name)
 			if err != nil {
 				return err
 			}
@@ -173,7 +173,7 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			if err := issue.Save(); err != nil {
 				return err
 			}
-			if err := store.SetCurrentIssue(f.Settings.CurrentWorkspace, issue.ID); err != nil {
+			if err := store.SetCurrentIssue(f.Workspace.Name, issue.ID); err != nil {
 				return err
 			}
 
