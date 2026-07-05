@@ -203,7 +203,7 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 	cmd.Flags().StringVarP(&description, "description", "d", "", "short description (used in {description} token)")
 	cmd.Flags().StringVar(&kind, "kind", "", "issue kind: bug, feature, task, story (used in {kind} token)")
 	cmd.Flags().StringVar(&changeType, "type", "", "change type: feat, fix, chore, docs, refactor, test (used in {type} token)")
-	cmd.Flags().StringArrayVarP(&repoNames, "repo", "r", nil, "repos to include (default: all in workspace)")
+	cmd.Flags().StringSliceVarP(&repoNames, "repo", "r", nil, "repos to include (default: all in workspace)")
 	cmd.Flags().BoolVar(&skipBranch, "skip-branch", false, "save issue context without creating a git branch")
 	return cmd
 }
