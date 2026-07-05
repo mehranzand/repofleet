@@ -3,6 +3,7 @@ package shell
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -68,13 +69,23 @@ var shellDefs = map[string]shellDef{
 	Bash:       {bashZshSnippet, func(home string) string { return filepath.Join(home, ".bashrc") }},
 	Zsh:        {bashZshSnippet, func(home string) string { return filepath.Join(home, ".zshrc") }},
 	Fish:       {fishSnippet, func(home string) string { return filepath.Join(home, ".config", "fish", "config.fish") }},
-	// PowerShell 7+
-	PowerShell: {powershellSnippet, func(home string) string { return filepath.Join(home, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1") }},
-	// Windows PowerShell 5.x
-	"powershell5": {powershellSnippet, func(home string) string { return filepath.Join(home, "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1") }},
+	PowerShell: {powershellSnippet, func(_ string) string { return psProfilePath() }},
 }
 
 var aliases = map[string]string{"pwsh": PowerShell}
+
+// psProfilePath queries PowerShell for the real $PROFILE path
+func psProfilePath() string {
+	out, err := exec.Command("powershell", "-NoProfile", "-Command", "$PROFILE").Output()
+	if err == nil {
+		if p := strings.TrimSpace(string(out)); p != "" {
+			return p
+		}
+	}
+	// fallback to PS5 conventional path
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1")
+}
 
 func normalize(sh string) string {
 	if canon, ok := aliases[sh]; ok {
@@ -145,13 +156,6 @@ func Install(sh string) (installed bool, rcPath string, err error) {
 		return false, "", err
 	}
 	rcPath = def.rcFile(home)
-
-	// For PowerShell, also install to the PS5 profile (WindowsPowerShell)
-	if sh == PowerShell {
-		ps5def := shellDefs["powershell5"]
-		ps5Path := ps5def.rcFile(home)
-		installTo(def.snippet, ps5Path) //nolint — best effort, ignore error
-	}
 
 	ok2, err := installTo(def.snippet, rcPath)
 	return ok2, rcPath, err
