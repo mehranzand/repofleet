@@ -68,7 +68,10 @@ var shellDefs = map[string]shellDef{
 	Bash:       {bashZshSnippet, func(home string) string { return filepath.Join(home, ".bashrc") }},
 	Zsh:        {bashZshSnippet, func(home string) string { return filepath.Join(home, ".zshrc") }},
 	Fish:       {fishSnippet, func(home string) string { return filepath.Join(home, ".config", "fish", "config.fish") }},
+	// PowerShell 7+
 	PowerShell: {powershellSnippet, func(home string) string { return filepath.Join(home, "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1") }},
+	// Windows PowerShell 5.x
+	"powershell5": {powershellSnippet, func(home string) string { return filepath.Join(home, "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1") }},
 }
 
 var aliases = map[string]string{"pwsh": PowerShell}
@@ -114,8 +117,26 @@ func RCFile(sh string) (string, error) {
 	return def.rcFile(home), nil
 }
 
+func installTo(snip, rcPath string) (bool, error) {
+	if err := os.MkdirAll(filepath.Dir(rcPath), 0o755); err != nil {
+		return false, err
+	}
+	existing, _ := os.ReadFile(rcPath)
+	if strings.Contains(string(existing), InstallMarker) {
+		return false, nil
+	}
+	f, err := os.OpenFile(rcPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+	_, err = fmt.Fprintf(f, "\n%s\n", snip)
+	return err == nil, err
+}
+
 func Install(sh string) (installed bool, rcPath string, err error) {
-	def, ok := shellDefs[normalize(sh)]
+	sh = normalize(sh)
+	def, ok := shellDefs[sh]
 	if !ok {
 		return false, "", fmt.Errorf("unknown shell %q", sh)
 	}
@@ -124,18 +145,14 @@ func Install(sh string) (installed bool, rcPath string, err error) {
 		return false, "", err
 	}
 	rcPath = def.rcFile(home)
-	if err := os.MkdirAll(filepath.Dir(rcPath), 0o755); err != nil {
-		return false, rcPath, err
+
+	// For PowerShell, also install to the PS5 profile (WindowsPowerShell)
+	if sh == PowerShell {
+		ps5def := shellDefs["powershell5"]
+		ps5Path := ps5def.rcFile(home)
+		installTo(def.snippet, ps5Path) //nolint — best effort, ignore error
 	}
-	existing, _ := os.ReadFile(rcPath)
-	if strings.Contains(string(existing), InstallMarker) {
-		return false, rcPath, nil
-	}
-	f, err := os.OpenFile(rcPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return false, rcPath, err
-	}
-	defer f.Close()
-	_, err = fmt.Fprintf(f, "\n%s\n", def.snippet)
-	return err == nil, rcPath, err
+
+	ok2, err := installTo(def.snippet, rcPath)
+	return ok2, rcPath, err
 }
