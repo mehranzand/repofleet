@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
-	"github.com/mehranzand/repofleet/commands/gitcmd"
 	"github.com/mehranzand/repofleet/commands/issuecmd"
 	"github.com/mehranzand/repofleet/commands/repocmd"
 	"github.com/mehranzand/repofleet/commands/workspacecmd"
@@ -90,7 +89,7 @@ func NewRootCmd(appVersion string) *cobra.Command {
 	cmd.AddCommand(workspacecmd.NewCmd(f))
 	cmd.AddCommand(repocmd.NewCmd(f))
 	cmd.AddCommand(issuecmd.NewCmd(f))
-	cmd.AddCommand(gitcmd.NewCmd(f))
+
 
 	return cmd
 }

@@ -32,14 +32,13 @@ go build -ldflags="-X main.version=dev" -o repofleet ./cmd/repofleet
 ```
 cmd/repofleet/          binary entry point (main.go)
 commands/               Cobra CLI layer — flags, output, calls internal/
-  factory/              dependency injection root (Config, GitRunner, IO)
+  factory/              dependency injection root (Workspace, GitRunner, IO)
   root/                 wires factory + registers all subcommands
-  repo/                 repo add / remove / list
-  issuecmd/             issue create / list / switch / sync / push / status / archive
-  gitcmd/               passthrough git
+  repocmd/              repo add / remove / list
+  workspacecmd/         workspace switch / remove / config
+  issuecmd/             issue create / switch / sync / status / repo / remove / archive
 internal/               business logic — not importable outside the module
-  config/               Workspace + Repo types; YAML at ~/.config/repofleet/
-  issue/                issue context entity; per-issue YAML state
+  store/                Workspace + Issue types; YAML + pointer files at ~/.config/repofleet/
   git/                  concurrent git runner (one goroutine per repo)
   iostreams/            injectable IO + ANSI color helpers
 ```

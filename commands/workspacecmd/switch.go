@@ -65,7 +65,7 @@ func newSwitchCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			created := ws.Name == ""
+			created := ws == nil
 			if created {
 				ws = &store.Workspace{Name: name}
 				if err := ws.Save(); err != nil {

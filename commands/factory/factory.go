@@ -21,9 +21,6 @@ func New() (*Factory, error) {
 	if err != nil {
 		return nil, err
 	}
-	if ws.Name == "" {
-		ws.Name = wsName
-	}
 	return &Factory{
 		Workspace: ws,
 		GitRunner: git.NewRunner(),
