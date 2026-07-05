@@ -68,4 +68,5 @@ func (t *Table) Render(w io.Writer) {
 		}
 		fmt.Fprintln(w)
 	}
+	fmt.Fprintln(w)
 }
