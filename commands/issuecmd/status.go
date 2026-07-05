@@ -35,7 +35,7 @@ func relativeAge(d time.Duration) string {
 
 func openTTY() (*os.File, error) {
 	if runtime.GOOS == "windows" {
-		return os.OpenFile("CONOUT$", os.O_RDWR, 0)
+		return nil, fmt.Errorf("windows: use default stdio")
 	}
 	return os.OpenFile("/dev/tty", os.O_RDWR, 0)
 }
