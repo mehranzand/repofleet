@@ -26,7 +26,7 @@ func newRepoAddCmd(f *factory.Factory) *cobra.Command {
 		Short: "Add a repo to the current issue and create its branch",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ws := f.Settings.CurrentWorkspace
+			ws := f.Workspace.Name
 			repoName := args[0]
 
 			id := store.CurrentIssueID(ws)
@@ -98,7 +98,7 @@ func newRepoRemoveCmd(f *factory.Factory) *cobra.Command {
 		Long:  "Remove a repo from the current issue. Deletes its branch if there are no uncommitted changes.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ws := f.Settings.CurrentWorkspace
+			ws := f.Workspace.Name
 			repoName := args[0]
 
 			id := store.CurrentIssueID(ws)

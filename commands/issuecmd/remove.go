@@ -16,7 +16,7 @@ func newRemoveCmd(f *factory.Factory) *cobra.Command {
 		Long:  "Remove an issue context from the current workspace. Does not delete any git branches.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ws := f.Settings.CurrentWorkspace
+			ws := f.Workspace.Name
 			id := args[0]
 
 			issue, err := store.LoadIssueByIDOrName(ws, id)

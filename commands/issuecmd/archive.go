@@ -20,8 +20,8 @@ func newArchiveCmd(f *factory.Factory) *cobra.Command {
 				return fmt.Errorf("issue %q not found", args[0])
 			}
 
-			if ctx.Workspace != f.Settings.CurrentWorkspace {
-				return fmt.Errorf("issue %q belongs to workspace %q, not %q", ctx.ID, ctx.Workspace, f.Settings.CurrentWorkspace)
+			if ctx.Workspace != f.Workspace.Name {
+				return fmt.Errorf("issue %q belongs to workspace %q, not %q", ctx.ID, ctx.Workspace, f.Workspace.Name)
 			}
 
 			ctx.Status = store.IssueStatusArchived
@@ -29,8 +29,8 @@ func newArchiveCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if store.CurrentIssueID(f.Settings.CurrentWorkspace) == args[0] {
-				_ = store.SetCurrentIssue(f.Settings.CurrentWorkspace, "")
+			if store.CurrentIssueID(f.Workspace.Name) == args[0] {
+				_ = store.SetCurrentIssue(f.Workspace.Name, "")
 			}
 
 			fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Success(fmt.Sprintf("Archived issue %q", args[0])))

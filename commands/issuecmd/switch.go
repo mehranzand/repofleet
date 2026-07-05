@@ -42,7 +42,7 @@ Without an argument, shows an interactive list to select from.
 With an issue ID or name, switches directly.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ws := f.Settings.CurrentWorkspace
+			ws := f.Workspace.Name
 
 			var id string
 			if len(args) == 1 {

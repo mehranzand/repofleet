@@ -17,7 +17,7 @@ func newRemoveCmd(f *factory.Factory) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
 
-			if name == f.Settings.CurrentWorkspace {
+			if name == f.Workspace.Name {
 				return fmt.Errorf("cannot remove the active workspace %q — switch to another workspace first", name)
 			}
 

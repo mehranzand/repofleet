@@ -55,7 +55,7 @@ func newSwitchCmd(f *factory.Factory) *cobra.Command {
 				name = selected
 			}
 
-			if name == f.Settings.CurrentWorkspace {
+			if name == f.Workspace.Name {
 				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Dim(fmt.Sprintf("Already in workspace %q", name)))
 				return nil
 			}
@@ -73,8 +73,7 @@ func newSwitchCmd(f *factory.Factory) *cobra.Command {
 				}
 			}
 
-			f.Settings.CurrentWorkspace = name
-			if err := f.Settings.Save(); err != nil {
+			if err := store.SetCurrentWorkspace(name); err != nil {
 				return err
 			}
 
@@ -116,7 +115,7 @@ func promptWorkspace(f *factory.Factory) (string, error) {
 		items[i] = workspaceItem{
 			Name:    ws.Name,
 			Repos:   strconv.Itoa(len(ws.Repos)) + " repo(s)",
-			Current: ws.Name == f.Settings.CurrentWorkspace,
+			Current: ws.Name == f.Workspace.Name,
 		}
 	}
 

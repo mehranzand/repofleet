@@ -17,13 +17,6 @@ func Initialize() error {
 		}
 	}
 
-	if _, err := os.Stat(settingsPath()); os.IsNotExist(err) {
-		s := &Settings{CurrentWorkspace: "default"}
-		if err := s.Save(); err != nil {
-			return err
-		}
-	}
-
 	defaultPath := filepath.Join(base, "repofleet", "workspaces", "default.yaml")
 	if _, err := os.Stat(defaultPath); os.IsNotExist(err) {
 		ws := &Workspace{Name: "default"}

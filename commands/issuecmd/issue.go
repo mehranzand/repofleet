@@ -18,10 +18,8 @@ func NewCmd(f *factory.Factory) *cobra.Command {
 			if err := cmd.Help(); err != nil {
 				return err
 			}
-			id := store.CurrentIssueID(f.Settings.CurrentWorkspace)
-			if id == "" {
-				fmt.Fprintf(f.IO.Out, "\n%s\n\n", iostreams.Dim("Issue is not selected"))
-			} else {
+			id := store.CurrentIssueID(f.Workspace.Name)
+			if id != "" {
 				issue, err := store.LoadIssue(id)
 				repoCount := 0
 				if err == nil {
@@ -31,7 +29,7 @@ func NewCmd(f *factory.Factory) *cobra.Command {
 					iostreams.Dim("Current issue is"),
 					iostreams.Cyan("#"+id),
 					iostreams.Dim(fmt.Sprintf("(%d repos) in the", repoCount)),
-					iostreams.BoldGreen(f.Settings.CurrentWorkspace),
+					iostreams.BoldGreen(f.Workspace.Name),
 					iostreams.Dim("workspace"),
 				)
 			}

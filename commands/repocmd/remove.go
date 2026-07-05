@@ -18,7 +18,7 @@ func newRemoveCmd(f *factory.Factory) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target := f.Workspace
-			if workspace != "" && workspace != f.Settings.CurrentWorkspace {
+			if workspace != "" && workspace != f.Workspace.Name {
 				var err error
 				target, err = store.LoadWorkspace(workspace)
 				if err != nil {
