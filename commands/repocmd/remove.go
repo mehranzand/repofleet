@@ -24,6 +24,9 @@ func newRemoveCmd(f *factory.Factory) *cobra.Command {
 				if err != nil {
 					return err
 				}
+				if target == nil {
+					return fmt.Errorf("workspace %q not found", workspace)
+				}
 			}
 
 			if !target.RemoveRepo(args[0]) {

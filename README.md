@@ -20,7 +20,7 @@
 
 RepoFleet is an issue-centered CLI tool for managing Git workflows across multiple repositories.
 
-When a feature spans multiple services, RepoFleet  lets you create one issue context, branch all repos together, run git commands across them in parallel, and track every open MR/PR — without switching directories.
+When a feature spans multiple services, RepoFleet lets you create one issue context, branch all repos together, sync and track status across them — without switching directories.
 
 ---
 
@@ -39,7 +39,6 @@ repofleet
 │   │                              Forge is auto-detected from remote URL (--forge to override)
 │   ├── remove <name>              Remove a repository from the current workspace
 │   └── list                       List repositories in the current workspace
-├── git [git args...]              Run any git command across all workspace repos
 └── issue
     ├── create <id>                Create an issue context (ID must be an integer)
     │                              --name         short internal name (max 8 chars, no spaces)
@@ -114,7 +113,7 @@ rf repo list                       # verify what's in the workspace
 ### 3. (Optional) Set a branch naming pattern
 
 Define how branches are named when you create an issue. Available tokens:
-`{workspace}` `{issue}` `{name}` `{description}` `{kind}` `{type}` `{repo}`
+`{workspace}` `{issue}` `{name}` `{description}` `{kind}` `{type}`
 
 ```bash
 rf workspace config --branch-pattern "{type}/{issue}-{name}"
@@ -158,15 +157,6 @@ Check status of all repos for the current issue:
 
 ```bash
 rf issue status
-```
-
-Run any git command across all repos at once:
-
-```bash
-rf git status
-rf git add -A
-rf git commit -m "feat: initial implementation"
-rf git push origin HEAD
 ```
 
 ### 7. Switch between issues

@@ -9,27 +9,33 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func workspacePath(name string) string {
+func workspacesDir() string {
 	base, _ := os.UserConfigDir()
-	return filepath.Join(base, "repofleet", "workspaces", name+".yaml")
+	return filepath.Join(base, "repofleet", "workspaces")
+}
+
+func workspacePath(name string) string {
+	return filepath.Join(workspacesDir(), name+".yaml")
 }
 
 func currentWorkspaceFile() string {
-	base, _ := os.UserConfigDir()
-	return filepath.Join(base, "repofleet", "workspaces", ".current")
+	return filepath.Join(workspacesDir(), ".current")
 }
 
 func currentIssueFile(wsName string) string {
-	base, _ := os.UserConfigDir()
-	return filepath.Join(base, "repofleet", "workspaces", wsName+".current")
+	return filepath.Join(workspacesDir(), wsName+".current")
+}
+
+func readPointerFile(path, def string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return def
+	}
+	return strings.TrimSpace(string(data))
 }
 
 func CurrentWorkspaceName() string {
-	data, err := os.ReadFile(currentWorkspaceFile())
-	if err != nil {
-		return "default"
-	}
-	return strings.TrimSpace(string(data))
+	return readPointerFile(currentWorkspaceFile(), "default")
 }
 
 func SetCurrentWorkspace(name string) error {
@@ -37,25 +43,22 @@ func SetCurrentWorkspace(name string) error {
 }
 
 func CurrentIssueID(wsName string) string {
-	data, err := os.ReadFile(currentIssueFile(wsName))
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(data))
+	return readPointerFile(currentIssueFile(wsName), "")
 }
 
 func SetCurrentIssue(wsName, id string) error {
+	path := currentIssueFile(wsName)
 	if id == "" {
-		_ = os.Remove(currentIssueFile(wsName))
+		_ = os.Remove(path)
 		return nil
 	}
-	return os.WriteFile(currentIssueFile(wsName), []byte(id), 0o644)
+	return os.WriteFile(path, []byte(id), 0o644)
 }
 
 func LoadWorkspace(name string) (*Workspace, error) {
 	data, err := os.ReadFile(workspacePath(name))
 	if os.IsNotExist(err) {
-		return &Workspace{}, nil
+		return nil, nil
 	}
 	if err != nil {
 		return nil, err
@@ -89,8 +92,7 @@ func (w *Workspace) Save() error {
 }
 
 func LoadWorkspaces() ([]*Workspace, error) {
-	base, _ := os.UserConfigDir()
-	dir := filepath.Join(base, "repofleet", "workspaces")
+	dir := workspacesDir()
 	entries, err := os.ReadDir(dir)
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -104,7 +106,7 @@ func LoadWorkspaces() ([]*Workspace, error) {
 			continue
 		}
 		ws, err := LoadWorkspace(strings.TrimSuffix(e.Name(), ".yaml"))
-		if err != nil {
+		if err != nil || ws == nil {
 			continue
 		}
 		workspaces = append(workspaces, ws)
