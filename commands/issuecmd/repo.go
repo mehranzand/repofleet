@@ -95,7 +95,7 @@ func newRepoRemoveCmd(f *factory.Factory) *cobra.Command {
 	return &cobra.Command{
 		Use:   "remove <repo-name>",
 		Short: "Remove a repo from the current issue",
-		Long:  "Remove a repo from the current issue. Deletes its branch if there are no uncommitted changes.",
+		Long:  "Remove a repo from the current issue. Deletes its branch if there are no uncommitted changes. If the branch is currently checked out, automatically switches to main or master first.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ws := f.Workspace.Name
@@ -148,6 +148,26 @@ func newRepoRemoveCmd(f *factory.Factory) *cobra.Command {
 						iostreams.Dim("!"), issue.BranchSlug)
 				}
 				return nil
+			}
+
+			currentResults := f.GitRunner.Run([]string{target.Path}, "rev-parse", "--abbrev-ref", "HEAD")
+			if len(currentResults) > 0 && currentResults[0].Err == nil &&
+				strings.TrimSpace(currentResults[0].Stdout) == issue.BranchSlug {
+				switched := false
+				for _, fallback := range []string{"main", "master"} {
+					r := f.GitRunner.Run([]string{target.Path}, "checkout", fallback)
+					if len(r) > 0 && r[0].Err == nil {
+						switched = true
+						break
+					}
+				}
+				if !switched {
+					fmt.Fprintf(f.IO.Out, "  %s %s\n", iostreams.Green("✓"),
+						fmt.Sprintf("Removed %q from issue %q", repoName, issue.ID))
+					fmt.Fprintf(f.IO.Out, "  %s branch %q is checked out — switch to main/master first to allow deletion\n",
+						iostreams.Dim("!"), issue.BranchSlug)
+					return nil
+				}
 			}
 
 			deleteResults := f.GitRunner.Run([]string{target.Path}, "branch", "-d", issue.BranchSlug)

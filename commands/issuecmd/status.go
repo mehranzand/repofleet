@@ -41,10 +41,12 @@ func openTTY() (*os.File, error) {
 }
 
 type repoItem struct {
-	Name     string
-	Branch   string
-	path     string
+	Name         string
+	Branch       string
+	SwitchBranch string
+	path         string
 }
+
 
 func newStatusCmd(f *factory.Factory) *cobra.Command {
 	var goTo bool
@@ -146,7 +148,6 @@ func newStatusCmd(f *factory.Factory) *cobra.Command {
 				return nil
 			}
 
-			// --- select mode ---
 			maxName, maxBranch := 0, 0
 			for i, r := range ctx.Repos {
 				if len(r.Name) > maxName {
@@ -160,17 +161,22 @@ func newStatusCmd(f *factory.Factory) *cobra.Command {
 			items := make([]repoItem, len(ctx.Repos))
 			for i, r := range ctx.Repos {
 				d := data[i]
+				switchBranch := ""
+				if d.branch != ctx.BranchSlug {
+					switchBranch = ctx.BranchSlug
+				}
 				items[i] = repoItem{
-					Name:   r.Name + strings.Repeat(" ", maxName-len(r.Name)),
-					Branch: d.branch + strings.Repeat(" ", maxBranch-len(d.branch)),
-					path:   r.Path,
+					Name:         r.Name + strings.Repeat(" ", maxName-len(r.Name)),
+					Branch:       d.branch + strings.Repeat(" ", maxBranch-len(d.branch)),
+					SwitchBranch: switchBranch,
+					path:         r.Path,
 				}
 			}
 
 			templates := &promptui.SelectTemplates{
 				Label:    `{{ "Go to repo:" | faint }}`,
-				Active:   `> {{ .Name | cyan }}  {{ .Branch | faint }}`,
-				Inactive: `  {{ .Name }}  {{ .Branch | faint }}`,
+				Active:   `> {{ .Name | cyan }}  {{ .Branch | faint }}{{ if .SwitchBranch }}  {{ "→" | faint }}  {{ .SwitchBranch | cyan }}{{ end }}`,
+				Inactive: `  {{ .Name }}  {{ .Branch | faint }}{{ if .SwitchBranch }}  {{ "→" | faint }}  {{ .SwitchBranch }}{{ end }}`,
 				Selected: `{{ "✓" | green }} {{ .Name | cyan }}`,
 			}
 
@@ -195,11 +201,19 @@ func newStatusCmd(f *factory.Factory) *cobra.Command {
 				return nil // cancelled
 			}
 
-			absPath := items[idx].path
+			selected := items[idx]
+
+			if selected.SwitchBranch != "" {
+				switchResults := f.GitRunner.Run([]string{selected.path}, "checkout", selected.SwitchBranch)
+				if len(switchResults) > 0 && switchResults[0].Err != nil {
+					fmt.Fprintf(f.IO.Out, "  ! could not switch branch %q: %v\n", selected.SwitchBranch, switchResults[0].Err)
+				}
+			}
+
 			cwd, _ := filepath.Abs(".")
-			rel, relErr := filepath.Rel(cwd, absPath)
+			rel, relErr := filepath.Rel(cwd, selected.path)
 			if relErr != nil {
-				rel = absPath
+				rel = selected.path
 			}
 
 			if outFile != "" {
@@ -210,7 +224,7 @@ func newStatusCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVar(&goTo, "go-to", false, "interactive repo selector — cd to selection via shell wrapper")
+	cmd.Flags().BoolVar(&goTo, "go-to", false, "interactive repo selector — cd to selection and switch to issue branch if needed")
 	cmd.Flags().StringVar(&outFile, "out", "", "write selected path to this file (used by shell wrapper)")
 	return cmd
 }
