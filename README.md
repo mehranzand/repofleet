@@ -52,12 +52,12 @@ repofleet
     ├── repo
     │   ├── add <repo-name>        Add a repo to the current issue (creates or switches branch)
     │   └── remove <repo-name>     Remove a repo from the current issue
-    │                              Deletes branch if clean; warns if uncommitted changes exist
+    │                              Deletes branch if clean; auto-switches to main/master if checked out
     │                              Protected branches (main, master) are never deleted
-    ├── sync                       Fetch and rebase all repos for the current issue
+    ├── sync                       Fetch all remotes for every repo in the current issue
     ├── status                     Show status dashboard for the current issue
     │                              Columns: Repo, Checkout, Commit, Age, HEAD±
-    │                              --go-to  interactive selector to cd into a repo
+    │                              --go-to  interactive selector; cds into repo and switches to issue branch if needed
     ├── remove <id>                Remove an issue context (does not delete git branches)
     └── archive <id>               Archive a completed issue context
 ```
@@ -167,7 +167,7 @@ To interactively select a repo and `cd` into it:
 rf issue status --go-to
 ```
 
-> Shell integration is set up automatically on first run. When prompted, run `source ~/.zshrc` (or your shell's rc file) once to activate it. After that, `rf issue status --go-to` changes your working directory on selection.
+> Shell integration is set up automatically on first run. When prompted, run `source ~/.zshrc` (or your shell's rc file) once to activate it. After that, `rf issue status --go-to` changes your working directory on selection. If the selected repo is not on the issue branch, it is automatically switched to it — repos that need a switch show a `→ branch` indicator in the list.
 
 ### 7. Switch between issues
 
@@ -192,7 +192,7 @@ rf issue switch --archived
 
 ### 8. Sync and wrap up
 
-Fetch and rebase all repos to stay up to date:
+Fetch all remotes to keep remote refs up to date:
 
 ```bash
 rf issue sync
