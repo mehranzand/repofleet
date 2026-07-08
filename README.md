@@ -23,11 +23,17 @@ RepoFleet is an issue-centered CLI tool for managing Git workflows across multip
 When a feature spans multiple services, RepoFleet lets you create one issue context, branch all repos together, sync and track status across them — without switching directories.
 
 ---
+<p align="center">
+  <img src="assets/repofleet-demo.gif" alt="RepoFleet demo">
+</p>
 
+---
 ## Commands
 
+
+
 ```
-repofleet
+rf
 ├── workspace
 │   ├── switch [name]              Switch to a workspace, or create one if it doesn't exist
 │   │                              Name must be letters, numbers, hyphens, or underscores
@@ -45,7 +51,7 @@ repofleet
     │                              --description  short description
     │                              --kind         bug | feature | task | story
     │                              --type         feat | fix | chore | docs | refactor | test
-    │                              --repo         limit to specific repos (default: all in workspace)
+    │                              --repo         limit to specific repos, comma-separated (default: all in workspace)
     │                              --skip-branch  save context without creating a git branch
     ├── switch [id|name]           Switch to an issue interactively, by ID, or by name
     │                              --archived     include archived issues in the list
@@ -99,7 +105,7 @@ A workspace groups your repos together. A `default` workspace is created automat
 
 ```bash
 rf workspace switch default        # use the default workspace
-rf workspace switch my-feature     # create and switch to a new workspace
+rf workspace switch backend        # create and switch to a new workspace
 ```
 
 ### 2. Add repositories
@@ -141,7 +147,7 @@ With `--skip-branch`, each repo's current checked-out branch is captured as the 
 To limit to specific repos:
 
 ```bash
-rf issue create 789 --name api-work --repo service-a --repo service-b
+rf issue create 789 --name api-work --repo service-a,service-b
 ```
 
 ### 5. Manage repos in an issue
@@ -150,7 +156,7 @@ Add or remove repos from the active issue after creation:
 
 ```bash
 rf issue repo add service-c        # creates branch if new, switches if exists
-rf issue repo remove service-c     # removes repo; deletes branch if clean
+rf issue repo remove service-c     # removes repo; auto-switches to main/master then deletes branch if clean
 ```
 
 ### 6. Work across repos
@@ -198,10 +204,16 @@ Fetch all remotes to keep remote refs up to date:
 rf issue sync
 ```
 
-When an issue is done, archive it:
+When an issue is done, archive it (keeps the context for reference):
 
 ```bash
 rf issue archive 123
+```
+
+To remove it entirely:
+
+```bash
+rf issue remove 123
 ```
 
 ---
