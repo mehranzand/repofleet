@@ -14,7 +14,7 @@ func newArchiveCmd(f *factory.Factory) *cobra.Command {
 		Use:   "archive <issue-id>",
 		Short: "Archive a completed issue workspace",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE:  func(cmd *cobra.Command, args []string) error {
 			ctx, err := store.LoadIssue(args[0])
 			if err != nil {
 				return fmt.Errorf("issue %q not found", args[0])
