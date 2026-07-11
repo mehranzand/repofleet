@@ -63,7 +63,8 @@ rf
     ├── sync                       Fetch all remotes for every repo in the current issue
     ├── status                     Show status dashboard for the current issue
     │                              Columns: Repo, Checkout, Commit, Age, HEAD±
-    │                              --go-to  interactive selector; cds into repo and switches to issue branch if needed
+    ├── goto                       Interactively select a repo, cd into it, and switch to the issue branch if needed
+    │                              Repos that need a branch switch show a → indicator in the list
     ├── remove <id>                Remove an issue context (does not delete git branches)
     └── archive <id>               Archive a completed issue context
 ```
@@ -170,10 +171,10 @@ rf issue status
 To interactively select a repo and `cd` into it:
 
 ```bash
-rf issue status --go-to
+rf issue goto
 ```
 
-> Shell integration is set up automatically on first run. When prompted, run `source ~/.zshrc` (or your shell's rc file) once to activate it. After that, `rf issue status --go-to` changes your working directory on selection. If the selected repo is not on the issue branch, it is automatically switched to it — repos that need a switch show a `→ branch` indicator in the list.
+> Shell integration is set up automatically on first run. When prompted, run `source ~/.zshrc` (or your shell's rc file) once to activate it. After that, `rf issue goto` changes your working directory on selection. If the selected repo is not on the issue branch, it is automatically switched to it — repos that need a switch show a `→ branch` indicator in the list.
 
 ### 7. Switch between issues
 

@@ -40,6 +40,7 @@ func NewCmd(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(newSwitchCmd(f))
 	cmd.AddCommand(newSyncCmd(f))
 	cmd.AddCommand(newStatusCmd(f))
+	cmd.AddCommand(newGotoCmd(f))
 	cmd.AddCommand(newRepoCmd(f))
 	cmd.AddCommand(newRemoveCmd(f))
 	cmd.AddCommand(newArchiveCmd(f))
