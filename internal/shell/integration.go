@@ -20,11 +20,10 @@ const InstallMarker = "# repofleet-shell-integration"
 
 const bashZshSnippet = InstallMarker + `
 rf() {
-  if [[ "$1" == "issue" && "$2" == "status" && "$*" == *"--go-to"* ]]; then
-    local tmp p args=()
-    for a in "${@:3}"; do [[ "$a" != "--go-to" ]] && args+=("$a"); done
+  if [[ "$1" == "issue" && "$2" == "goto" ]]; then
+    local tmp p
     tmp=$(mktemp) || return 1
-    command rf issue status --go-to --out "$tmp" "${args[@]}"
+    command rf issue goto --out "$tmp" "${@:3}"
     p=$(cat "$tmp" 2>/dev/null)
     rm -f "$tmp"
     [ -n "$p" ] && cd "$p"
@@ -35,10 +34,9 @@ rf() {
 
 const fishSnippet = InstallMarker + `
 function rf
-  if test "$argv[1]" = "issue" -a "$argv[2]" = "status" -a (contains -- --go-to $argv)
+  if test "$argv[1]" = "issue" -a "$argv[2]" = "goto"
     set tmp (mktemp)
-    set rest (string match -v -- '--go-to' $argv[3..])
-    command rf issue status --go-to --out $tmp $rest
+    command rf issue goto --out $tmp $argv[3..]
     set p (cat $tmp 2>/dev/null)
     rm -f $tmp
     test -n "$p" && cd $p
@@ -51,10 +49,10 @@ const powershellSnippet = InstallMarker + `
 function rf {
   $bin = (Get-Command rf -CommandType Application -ErrorAction SilentlyContinue).Source
   if (-not $bin) { Write-Error "rf binary not found in PATH"; return }
-  if ($args[0] -eq "issue" -and $args[1] -eq "status" -and $args -contains "--go-to") {
+  if ($args[0] -eq "issue" -and $args[1] -eq "goto") {
     $tmp = [System.IO.Path]::GetTempFileName()
-    $rest = $args | Select-Object -Skip 2 | Where-Object { $_ -ne "--go-to" }
-    & $bin issue status --go-to --out $tmp @rest
+    $rest = $args | Select-Object -Skip 2
+    & $bin issue goto --out $tmp @rest
     $p = Get-Content $tmp -ErrorAction SilentlyContinue
     Remove-Item $tmp -ErrorAction SilentlyContinue
     if ($p) { Set-Location $p }

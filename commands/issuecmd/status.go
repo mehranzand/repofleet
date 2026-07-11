@@ -3,13 +3,11 @@ package issuecmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/manifoldco/promptui"
 	"github.com/mehranzand/repofleet/commands/factory"
 	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
@@ -44,15 +42,12 @@ type repoItem struct {
 	Name         string
 	Branch       string
 	SwitchBranch string
+	Current      bool
 	path         string
 }
 
-
 func newStatusCmd(f *factory.Factory) *cobra.Command {
-	var goTo bool
-	var outFile string
-
-	cmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   "status",
 		Short: "Show status dashboard for all repos in the current issue",
 		Long:  "Show the current branch and uncommitted changes for every repo in the active issue context.",
@@ -114,117 +109,37 @@ func newStatusCmd(f *factory.Factory) *cobra.Command {
 				}
 			}
 
-			if !goTo {
-				fmt.Fprintf(f.IO.Out, "%s %s %s %s\n\n",
-					iostreams.Dim("Repos for issue"), iostreams.Cyan("#"+ctx.ID),
-					iostreams.Dim("on branch"), iostreams.Cyan(ctx.BranchSlug),
-				)
+			fmt.Fprintf(f.IO.Out, "%s %s %s %s\n\n",
+				iostreams.Dim("Repos for issue"), iostreams.Cyan("#"+ctx.ID),
+				iostreams.Dim("on branch"), iostreams.Cyan(ctx.BranchSlug),
+			)
 
-				t := iostreams.NewTable()
-				t.AddField("Repo", iostreams.Dim)
-				t.AddField("Checkout", iostreams.Dim)
-				t.AddField("Commit", iostreams.Dim)
-				t.AddField("Age", iostreams.Dim)
-				t.AddField("HEAD±", iostreams.Dim)
-				t.EndRow()
+			t := iostreams.NewTable()
+			t.AddField("Repo", iostreams.Dim)
+			t.AddField("Checkout", iostreams.Dim)
+			t.AddField("Commit", iostreams.Dim)
+			t.AddField("Age", iostreams.Dim)
+			t.AddField("HEAD±", iostreams.Dim)
+			t.EndRow()
 
-				for i, r := range ctx.Repos {
-					d := data[i]
-					var headPM string
-					if d.clean {
-						headPM = iostreams.Dim("clean")
-					} else {
-						headPM = iostreams.Green(fmt.Sprintf("↑%d", d.added)) + " " + iostreams.Red(fmt.Sprintf("↓%d", d.deleted))
-					}
-					t.AddField(r.Name, iostreams.Cyan)
-					t.AddField(d.branch, iostreams.Dim)
-					t.AddField(d.commit, iostreams.Dim)
-					t.AddField(d.age, iostreams.Dim)
-					t.AddField(headPM, nil)
-					t.EndRow()
-				}
-
-				t.Render(f.IO.Out)
-				return nil
-			}
-
-			maxName, maxBranch := 0, 0
-			for i, r := range ctx.Repos {
-				if len(r.Name) > maxName {
-					maxName = len(r.Name)
-				}
-				if len(data[i].branch) > maxBranch {
-					maxBranch = len(data[i].branch)
-				}
-			}
-
-			items := make([]repoItem, len(ctx.Repos))
 			for i, r := range ctx.Repos {
 				d := data[i]
-				switchBranch := ""
-				if d.branch != ctx.BranchSlug {
-					switchBranch = ctx.BranchSlug
+				var headPM string
+				if d.clean {
+					headPM = iostreams.Dim("clean")
+				} else {
+					headPM = iostreams.Green(fmt.Sprintf("↑%d", d.added)) + " " + iostreams.Red(fmt.Sprintf("↓%d", d.deleted))
 				}
-				items[i] = repoItem{
-					Name:         r.Name + strings.Repeat(" ", maxName-len(r.Name)),
-					Branch:       d.branch + strings.Repeat(" ", maxBranch-len(d.branch)),
-					SwitchBranch: switchBranch,
-					path:         r.Path,
-				}
+				t.AddField(r.Name, iostreams.Cyan)
+				t.AddField(d.branch, iostreams.Dim)
+				t.AddField(d.commit, iostreams.Dim)
+				t.AddField(d.age, iostreams.Dim)
+				t.AddField(headPM, nil)
+				t.EndRow()
 			}
 
-			templates := &promptui.SelectTemplates{
-				Label:    `{{ "Go to repo:" | faint }}`,
-				Active:   `> {{ .Name | cyan }}  {{ .Branch | faint }}{{ if .SwitchBranch }}  {{ "→" | faint }}  {{ .SwitchBranch | cyan }}{{ end }}`,
-				Inactive: `  {{ .Name }}  {{ .Branch | faint }}{{ if .SwitchBranch }}  {{ "→" | faint }}  {{ .SwitchBranch }}{{ end }}`,
-				Selected: `{{ "✓" | green }} {{ .Name | cyan }}`,
-			}
-
-			tty, ttyErr := openTTY()
-			if ttyErr == nil {
-				defer tty.Close()
-			}
-
-			prompt := promptui.Select{
-				Label:     fmt.Sprintf("Issue %s", ctx.ID),
-				Items:     items,
-				Templates: templates,
-				Size:      15,
-			}
-			if ttyErr == nil {
-				prompt.Stdin = tty
-				prompt.Stdout = tty
-			}
-
-			idx, _, err := prompt.Run()
-			if err != nil {
-				return nil // cancelled
-			}
-
-			selected := items[idx]
-
-			if selected.SwitchBranch != "" {
-				switchResults := f.GitRunner.Run([]string{selected.path}, "checkout", selected.SwitchBranch)
-				if len(switchResults) > 0 && switchResults[0].Err != nil {
-					fmt.Fprintf(f.IO.Out, "  ! could not switch branch %q: %v\n", selected.SwitchBranch, switchResults[0].Err)
-				}
-			}
-
-			cwd, _ := filepath.Abs(".")
-			rel, relErr := filepath.Rel(cwd, selected.path)
-			if relErr != nil {
-				rel = selected.path
-			}
-
-			if outFile != "" {
-				return os.WriteFile(outFile, []byte(rel), 0o600)
-			}
-			fmt.Fprintln(f.IO.Out, rel)
+			t.Render(f.IO.Out)
 			return nil
 		},
 	}
-
-	cmd.Flags().BoolVar(&goTo, "go-to", false, "interactive repo selector — cd to selection and switch to issue branch if needed")
-	cmd.Flags().StringVar(&outFile, "out", "", "write selected path to this file (used by shell wrapper)")
-	return cmd
 }
