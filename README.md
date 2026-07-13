@@ -20,7 +20,7 @@
 
 RepoFleet is an issue-centered CLI tool for managing Git workflows across multiple repositories.
 
-When a feature spans multiple services, RepoFleet lets you create one issue context, branch all repos together, sync and track status across them — without switching directories.
+When a feature spans multiple services, RepoFleet lets you create one issue context, branch all repos together, sync and track status across them without switching directories.
 
 ---
 <p align="center">
