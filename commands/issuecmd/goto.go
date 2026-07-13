@@ -19,6 +19,8 @@ func newGotoCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "goto",
 		Short: "Interactively select a repo, cd into it, and switch to the issue branch if needed",
+		Long: "Interactively select a repo, cd into it, and switch to the issue branch if needed.\n\n" +
+			"Repos whose path no longer exists on disk show a red ! marker and cannot be selected.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id := store.CurrentIssueID(f.Workspace.Name)
 			if id == "" {
@@ -38,12 +40,15 @@ func newGotoCmd(f *factory.Factory) *cobra.Command {
 			items := make([]repoItem, len(ctx.Repos))
 			maxName, maxBranch := 0, 0
 			for i, r := range ctx.Repos {
+				missing := checkRepoPath(r) != nil
 				b := "?"
-				if branchResults[i].Err == nil {
+				if missing {
+					b = "missing"
+				} else if branchResults[i].Err == nil {
 					b = strings.TrimSpace(branchResults[i].Stdout)
 				}
 				switchBranch := ""
-				if b != ctx.BranchSlug {
+				if !missing && b != ctx.BranchSlug {
 					switchBranch = ctx.BranchSlug
 				}
 				absPath, _ := filepath.Abs(r.Path)
@@ -52,6 +57,7 @@ func newGotoCmd(f *factory.Factory) *cobra.Command {
 					Branch:       b,
 					SwitchBranch: switchBranch,
 					Current:      absPath == cwd,
+					Missing:      missing,
 					path:         r.Path,
 				}
 				if len(r.Name) > maxName {
@@ -76,8 +82,8 @@ func newGotoCmd(f *factory.Factory) *cobra.Command {
 
 			templates := &promptui.SelectTemplates{
 				Label:    `{{ "Go to repo:" | faint }}`,
-				Active:   `> {{ if .Current }}{{ "●" | cyan }} {{ else }}  {{ end }}{{ .Name | cyan }}  {{ .Branch | faint }}{{ if .SwitchBranch }}  {{ "→" | faint }}  {{ .SwitchBranch | cyan }}{{ end }}`,
-				Inactive: `  {{ if .Current }}{{ "●" | cyan }} {{ else }}  {{ end }}{{ .Name }}  {{ .Branch | faint }}{{ if .SwitchBranch }}  {{ "→" | faint }}  {{ .SwitchBranch }}{{ end }}`,
+				Active:   `> {{ if .Missing }}{{ "!" | red }} {{ else if .Current }}{{ "●" | cyan }} {{ else }}  {{ end }}{{ .Name | cyan }}  {{ .Branch | faint }}{{ if .SwitchBranch }}  {{ "→" | faint }}  {{ .SwitchBranch | cyan }}{{ end }}`,
+				Inactive: `  {{ if .Missing }}{{ "!" | red }} {{ else if .Current }}{{ "●" | cyan }} {{ else }}  {{ end }}{{ .Name }}  {{ .Branch | faint }}{{ if .SwitchBranch }}  {{ "→" | faint }}  {{ .SwitchBranch }}{{ end }}`,
 				Selected: `{{ "✓" | green }} {{ .Name | cyan }}`,
 				Help:     `{{ "↑↓ navigate  ↵ select" | faint }}`,
 			}
@@ -104,6 +110,10 @@ func newGotoCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			selected := items[idx]
+
+			if selected.Missing {
+				return fmt.Errorf("repo %q path %q no longer exists — was it moved or deleted?", strings.TrimSpace(selected.Name), selected.path)
+			}
 
 			if selected.SwitchBranch != "" {
 				switchResults := f.GitRunner.Run([]string{selected.path}, "checkout", selected.SwitchBranch)

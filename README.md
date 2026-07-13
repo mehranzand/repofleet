@@ -43,8 +43,11 @@ rf
 ├── repo
 │   ├── add <path>                 Add a repository to the current workspace
 │   │                              Forge is auto-detected from remote URL (--forge to override)
+│   │                              --remote overrides the detected remote (default: git remote get-url origin)
+│   │                              Remote is normalized to SSH form (git@host:owner/repo.git) regardless of input
 │   ├── remove <name>              Remove a repository from the current workspace
 │   └── list                       List repositories in the current workspace
+│                                  Repos whose path no longer exists show a red ! marker
 └── issue
     ├── create <id>                Create an issue context (ID must be an integer)
     │                              --name         short internal name (max 8 chars, no spaces)
@@ -53,18 +56,24 @@ rf
     │                              --type         feat | fix | chore | docs | refactor | test
     │                              --repo         limit to specific repos, comma-separated (default: all in workspace)
     │                              --skip-branch  save context without creating a git branch
+    │                              Errors out before creating any branch if a repo's path no longer exists
     ├── switch [id|name]           Switch to an issue interactively, by ID, or by name
     │                              --archived     include archived issues in the list
     ├── repo
     │   ├── add <repo-name>        Add a repo to the current issue (creates or switches branch)
+    │   │                          Errors if the repo's path no longer exists on disk
     │   └── remove <repo-name>     Remove a repo from the current issue
     │                              Deletes branch if clean; auto-switches to main/master if checked out
     │                              Protected branches (main, master) are never deleted
+    │                              If the repo's path no longer exists, still unlinks it but skips branch cleanup
     ├── sync                       Fetch all remotes for every repo in the current issue
     ├── status                     Show status dashboard for the current issue
     │                              Columns: Repo, Checkout, Commit, Age, HEAD±
+    │                              HEAD± includes untracked (new) files, not just tracked changes
+    │                              Repos with a missing path show a red ! marker instead of status
     ├── goto                       Interactively select a repo, cd into it, and switch to the issue branch if needed
     │                              Repos that need a branch switch show a → indicator in the list
+    │                              Repos with a missing path show a red ! marker and cannot be selected
     ├── remove <id>                Remove an issue context (does not delete git branches)
     └── archive <id>               Archive a completed issue context
 ```

@@ -91,7 +91,8 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			"Branch name resolution order:\n" +
 			"  1. --branch flag (overrides everything)\n" +
 			"  2. Workspace branch pattern (rf workspace config --branch-pattern)\n" +
-			"  3. Slugified issue ID (fallback)",
+			"  3. Slugified issue ID (fallback)\n\n" +
+			"Errors out before creating any branch if a selected repo's path no longer exists on disk.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ws := f.Workspace
@@ -155,6 +156,12 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			}
 			if len(issue.Repos) == 0 {
 				return fmt.Errorf("no repos in current workspace — add one with: rf repo add <path>")
+			}
+
+			for _, r := range issue.Repos {
+				if err := checkRepoPath(r); err != nil {
+					return err
+				}
 			}
 
 			if skipBranch {
