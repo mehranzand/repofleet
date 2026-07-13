@@ -72,41 +72,53 @@ rf
 │   ├── remove <name>              Remove a repository from the current workspace
 │   └── list                       List repositories in the current workspace
 │                                  Repos whose path no longer exists show a red ! marker
-└── issue
-    ├── create <id>                Create an issue context (ID must be an integer)
-    │                              --name         short internal name (max 8 chars, no spaces)
-    │                              --description  short description
-    │                              --kind         bug | feature | task | story
-    │                              --type         feat | fix | chore | docs | refactor | test
-    │                              --repo         limit to specific repos, comma-separated (default: all in workspace)
-    │                              --skip-branch  save context without creating a git branch
-    │                              Errors out before creating any branch if a repo's path no longer exists
-    ├── list                       List every issue in the workspace, including archived, in a detailed table
-    │                              Columns: ID, Hash, Name, Branch, Status, Repos — current issue marked with *
-    ├── switch [id|name|hash]      Switch to an issue interactively, or by ID, name, or hash
-    │                              --archived     include archived issues in the list
-    │                              Each issue has an immutable short hash (like a git commit SHA),
-    │                              shown beside #issue in the interactive list — the same ID can be
-    │                              reused by unrelated issues across different repos; if an ID match
-    │                              is ambiguous, retry with the hash shown in the error
-    ├── repo
-    │   ├── add <repo-name>        Add a repo to the current issue (creates or switches branch)
-    │   │                          Errors if the repo's path no longer exists on disk
-    │   └── remove <repo-name>     Remove a repo from the current issue
-    │                              Deletes branch if clean; auto-switches to main/master if checked out
-    │                              Protected branches (main, master) are never deleted
-    │                              If the repo's path no longer exists, still unlinks it but skips branch cleanup
-    ├── sync                       Fetch all remotes for every repo in the current issue
-    ├── status                     Show status dashboard for the current issue
-    │                              Columns: Repo, Checkout, Commit, Age, HEAD±
-    │                              HEAD± includes untracked (new) files, not just tracked changes
-    │                              Repos with a missing path show a red ! marker instead of status
-    ├── goto                       Interactively select a repo, cd into it, and switch to the issue branch if needed
-    │                              Repos that need a branch switch show a → indicator in the list
-    │                              Repos with a missing path show a red ! marker and cannot be selected
-    ├── remove <id|name|hash>      Remove an issue context (does not delete git branches)
-    │                              --archived     also search archived issues
-    └── archive <id|name|hash>     Archive a completed issue context (only searches active issues)
+├── issue
+│   ├── create <id>                Create an issue context (ID must be an integer)
+│   │                              --name         short internal name (max 8 chars, no spaces)
+│   │                              --description  short description
+│   │                              --kind         bug | feature | task | story
+│   │                              --type         feat | fix | chore | docs | refactor | test
+│   │                              --repo         limit to specific repos, comma-separated (default: all in workspace)
+│   │                              --skip-branch  save context without creating a git branch
+│   │                              Errors out before creating any branch if a repo's path no longer exists
+│   ├── list                       List every issue in the workspace, including archived, in a detailed table
+│   │                              Columns: ID, Hash, Name, Branch, Status, Repos — current issue marked with *
+│   ├── switch [id|name|hash]      Switch to an issue interactively, or by ID, name, or hash
+│   │                              --archived     include archived issues in the list
+│   │                              Each issue has an immutable short hash (like a git commit SHA),
+│   │                              shown beside #issue in the interactive list — the same ID can be
+│   │                              reused by unrelated issues across different repos; if an ID match
+│   │                              is ambiguous, retry with the hash shown in the error
+│   ├── repo
+│   │   ├── add <repo-name>        Add a repo to the current issue (creates or switches branch)
+│   │   │                          Errors if the repo's path no longer exists on disk
+│   │   └── remove <repo-name>     Remove a repo from the current issue
+│   │                              Deletes branch if clean; auto-switches to main/master if checked out
+│   │                              Protected branches (main, master) are never deleted
+│   │                              If the repo's path no longer exists, still unlinks it but skips branch cleanup
+│   ├── sync                       Fetch all remotes for every repo in the current issue
+│   ├── status                     Show status dashboard for the current issue
+│   │                              Columns: Repo, Checkout, Commit, Age, HEAD±
+│   │                              HEAD± includes untracked (new) files, not just tracked changes
+│   │                              Repos with a missing path show a red ! marker instead of status
+│   ├── goto                       Interactively select a repo, cd into it, and switch to the issue branch if needed
+│   │                              Repos that need a branch switch show a → indicator in the list
+│   │                              Repos with a missing path show a red ! marker and cannot be selected
+│   ├── remove <id|name|hash>      Remove an issue context (does not delete git branches)
+│   │                              --archived     also search archived issues
+│   └── archive <id|name|hash>     Archive a completed issue context (only searches active issues)
+└── snapshot
+    ├── create <issue-id>          Save the uncommitted diff of every repo in an issue as a snapshot
+    │                              --clean    reset each repo to HEAD after saving
+    │                              --dry-run  preview what would be captured without writing anything
+    ├── restore <issue-id> [hash]  Re-apply a snapshot's diff to each repo
+    │                              Defaults to the most recent snapshot; pass a hash to restore an older one
+    │                              --dry-run  preview what would be applied without changing any files
+    ├── list                       List all snapshots in the current workspace
+    ├── remove <hash>              Remove a specific snapshot by hash (searches all issues in the workspace)
+    └── prune                      Remove all snapshots for the current issue
+                                   --all    remove snapshots across all issues in the workspace
+                                   --force  skip confirmation prompt
 ```
 
 ---
@@ -248,7 +260,47 @@ To include archived issues in the list:
 rf issue switch --archived
 ```
 
-### 8. Sync and wrap up
+### 8. Snapshots
+
+A snapshot captures the uncommitted diff of every repo in an issue and saves it to disk — without using git stash or a local commit. Useful before a rebase, a branch switch, or handing work off to another machine.
+
+Save the current state of all repos in an issue:
+
+```bash
+rf snapshot create 123
+rf snapshot create 123 --clean    # also resets each repo to HEAD after saving
+rf snapshot create 123 --dry-run  # preview what would be captured
+```
+
+List all snapshots across the workspace:
+
+```bash
+rf snapshot list
+```
+
+Restore the most recent snapshot (or a specific one by hash):
+
+```bash
+rf snapshot restore 123
+rf snapshot restore 123 cf60033   # restore a specific snapshot
+rf snapshot restore 123 --dry-run # preview what would be applied
+```
+
+Remove a specific snapshot by hash (searches all issues automatically):
+
+```bash
+rf snapshot remove cf60033
+```
+
+Remove all snapshots for the current issue, or the entire workspace:
+
+```bash
+rf snapshot prune               # current issue only (prompts for confirmation)
+rf snapshot prune --all         # all issues in the workspace
+rf snapshot prune --all --force # skip confirmation
+```
+
+### 9. Sync and wrap up
 
 Fetch all remotes to keep remote refs up to date:
 

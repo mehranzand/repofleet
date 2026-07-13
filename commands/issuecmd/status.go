@@ -27,23 +27,6 @@ func countLines(b []byte) int {
 	return n
 }
 
-func relativeAge(d time.Duration) string {
-	switch {
-	case d < time.Minute:
-		return fmt.Sprintf("%ds", int(d.Seconds()))
-	case d < time.Hour:
-		return fmt.Sprintf("%dm", int(d.Minutes()))
-	case d < 24*time.Hour:
-		return fmt.Sprintf("%dh", int(d.Hours()))
-	case d < 30*24*time.Hour:
-		return fmt.Sprintf("%dd", int(d.Hours()/24))
-	case d < 365*24*time.Hour:
-		return fmt.Sprintf("%dmo", int(d.Hours()/(24*30)))
-	default:
-		return fmt.Sprintf("%dy", int(d.Hours()/(24*365)))
-	}
-}
-
 func openTTY() (*os.File, error) {
 	if runtime.GOOS == "windows" {
 		return nil, fmt.Errorf("windows: use default stdio")
@@ -112,7 +95,7 @@ func newStatusCmd(f *factory.Factory) *cobra.Command {
 				}
 				if timeResults[i].Err == nil {
 					if ts, err := strconv.ParseInt(strings.TrimSpace(timeResults[i].Stdout), 10, 64); err == nil {
-						d.age = relativeAge(time.Since(time.Unix(ts, 0)))
+						d.age = iostreams.RelativeAge(time.Since(time.Unix(ts, 0)))
 					}
 				}
 				d.clean = statusResults[i].Err == nil && strings.TrimSpace(statusResults[i].Stdout) == ""

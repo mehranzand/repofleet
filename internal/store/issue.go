@@ -1,14 +1,14 @@
 package store
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/mehranzand/repofleet/internal/util"
 )
 
 type AmbiguousIssueError struct {
@@ -26,11 +26,7 @@ func issuePath(wsName, hash string) string {
 }
 
 func NewIssueHash() (string, error) {
-	b := make([]byte, 8)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(b)[:7], nil
+	return util.ShortHash()
 }
 
 func LoadIssueByHash(wsName, hash string) (*Issue, error) {

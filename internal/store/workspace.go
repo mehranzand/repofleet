@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/mehranzand/repofleet/internal/giturl"
+	"github.com/mehranzand/repofleet/internal/util/giturl"
 )
 
 func workspacesDir() string {

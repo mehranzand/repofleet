@@ -1,9 +1,9 @@
 package factory
 
 import (
-	"github.com/mehranzand/repofleet/internal/git"
 	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
+	"github.com/mehranzand/repofleet/internal/util/git"
 )
 
 type Factory struct {
