@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
+	"github.com/mehranzand/repofleet/internal/giturl"
 	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
 	"github.com/spf13/cobra"
@@ -27,7 +28,7 @@ func detectForge(remoteURL string) (store.RepoForge, bool) {
 func newAddCmd(f *factory.Factory) *cobra.Command {
 	var name string
 	var forge string
-	var url string
+	var remote string
 
 	cmd := &cobra.Command{
 		Use:   "add <path>",
@@ -70,13 +71,14 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 				}
 			}
 
-			remoteURL := url
+			remoteURL := remote
 			if remoteURL == "" {
 				out, err := exec.Command("git", "-C", absPath, "remote", "get-url", "origin").Output()
 				if err == nil {
 					remoteURL = strings.TrimSpace(string(out))
 				}
 			}
+			remoteURL = giturl.Normalize(remoteURL)
 
 			var resolvedForge store.RepoForge
 			if forge != "" {
@@ -95,10 +97,10 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			target.AddRepo(store.Repo{
-				Name:  repoName,
-				Path:  absPath,
-				Forge: resolvedForge,
-				URL:   remoteURL,
+				Name:   repoName,
+				Path:   absPath,
+				Forge:  resolvedForge,
+				Remote: remoteURL,
 			})
 			if err := target.Save(); err != nil {
 				return err
@@ -112,7 +114,7 @@ func newAddCmd(f *factory.Factory) *cobra.Command {
 
 	cmd.Flags().StringVarP(&name, "name", "n", "", "name for the repo (default: directory basename)")
 	cmd.Flags().StringVarP(&forge, "forge", "f", "", "override forge type: github or gitlab (default: auto-detected from remote URL)")
-	cmd.Flags().StringVarP(&url, "url", "u", "", "remote URL (default: git remote get-url origin)")
+	cmd.Flags().StringVarP(&remote, "remote", "u", "", "remote URL (default: git remote get-url origin)")
 
 	return cmd
 }

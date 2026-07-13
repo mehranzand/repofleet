@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/mehranzand/repofleet/internal/giturl"
 )
 
 func workspacesDir() string {
@@ -64,7 +66,13 @@ func LoadWorkspace(name string) (*Workspace, error) {
 		return nil, err
 	}
 	var ws Workspace
-	return &ws, yaml.Unmarshal(data, &ws)
+	if err := yaml.Unmarshal(data, &ws); err != nil {
+		return nil, err
+	}
+	for i := range ws.Repos {
+		ws.Repos[i].Remote = giturl.Normalize(ws.Repos[i].Remote)
+	}
+	return &ws, nil
 }
 
 func DeleteWorkspace(name string) error {

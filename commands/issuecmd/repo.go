@@ -24,6 +24,7 @@ func newRepoAddCmd(f *factory.Factory) *cobra.Command {
 	return &cobra.Command{
 		Use:   "add <repo-name>",
 		Short: "Add a repo to the current issue and create its branch",
+		Long:  "Add a repo to the current issue and create its branch. Errors if the repo's path no longer exists on disk.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ws := f.Workspace.Name
@@ -63,8 +64,12 @@ func newRepoAddCmd(f *factory.Factory) *cobra.Command {
 				}
 			}
 
+			if err := checkRepoPath(*target); err != nil {
+				return err
+			}
+
 			// check if branch already exists; if so, switch otherwise create
-			exists := f.GitRunner.Run([]string{target.Path}, "rev-parse", "--verify", issue.BranchSlug)
+			exists := f.GitRunner.Run([]string{target.Path}, "rev-parse", "--verify", "--quiet", "refs/heads/"+issue.BranchSlug)
 			var checkoutArgs []string
 			if len(exists) > 0 && exists[0].Err == nil {
 				checkoutArgs = []string{"checkout", issue.BranchSlug}
@@ -95,8 +100,9 @@ func newRepoRemoveCmd(f *factory.Factory) *cobra.Command {
 	return &cobra.Command{
 		Use:   "remove <repo-name>",
 		Short: "Remove a repo from the current issue",
-		Long:  "Remove a repo from the current issue. Deletes its branch if there are no uncommitted changes. If the branch is currently checked out, automatically switches to main or master first.",
-		Args:  cobra.ExactArgs(1),
+		Long: "Remove a repo from the current issue. Deletes its branch if there are no uncommitted changes. If the branch is currently checked out, automatically switches to main or master first.\n\n" +
+			"If the repo's path no longer exists on disk, it is still unlinked from the issue, but branch cleanup is skipped with a warning.",
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ws := f.Workspace.Name
 			repoName := args[0]
@@ -123,6 +129,17 @@ func newRepoRemoveCmd(f *factory.Factory) *cobra.Command {
 			}
 			if target == nil {
 				return fmt.Errorf("repo %q is not part of issue %q", repoName, issue.ID)
+			}
+
+			if pathErr := checkRepoPath(*target); pathErr != nil {
+				issue.Repos = remaining
+				if err := issue.Save(); err != nil {
+					return err
+				}
+				fmt.Fprintf(f.IO.Out, "  %s %s\n", iostreams.Green("✓"),
+					fmt.Sprintf("Removed %q from issue %q", repoName, issue.ID))
+				fmt.Fprintf(f.IO.Out, "  %s %s — skipped branch cleanup\n", iostreams.Dim("!"), pathErr)
+				return nil
 			}
 
 			// check for uncommitted changes

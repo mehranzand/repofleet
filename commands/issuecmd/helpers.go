@@ -2,10 +2,25 @@ package issuecmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/mehranzand/repofleet/internal/store"
 )
+
+func checkRepoPath(r store.Repo) error {
+	info, err := os.Stat(r.Path)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("repo %q path %q no longer exists — was it moved or deleted?", r.Name, r.Path)
+	}
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("repo %q path %q is not a directory", r.Name, r.Path)
+	}
+	return nil
+}
 
 func repoPaths(repos []store.Repo) []string {
 	paths := make([]string, len(repos))
