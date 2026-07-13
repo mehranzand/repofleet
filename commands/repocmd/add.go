@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
-	"github.com/mehranzand/repofleet/internal/giturl"
 	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
+	"github.com/mehranzand/repofleet/internal/util/giturl"
 	"github.com/spf13/cobra"
 )
 

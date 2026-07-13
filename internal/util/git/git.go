@@ -6,7 +6,6 @@ import (
 	"os/exec"
 )
 
-// Result holds the output of a git command run inside one repository.
 type Result struct {
 	RepoPath string
 	Stdout   string
@@ -18,13 +17,11 @@ type indexedResult struct {
 	res Result
 }
 
-// Runner executes git commands across one or more repositories concurrently.
 type Runner struct{}
 
 func NewRunner() *Runner { return &Runner{} }
 
-// Run executes the given git args in every repoPath concurrently and
-// returns one Result per repository, preserving input order.
+
 func (r *Runner) Run(repoPaths []string, args ...string) []Result {
 	ch := make(chan indexedResult, len(repoPaths))
 

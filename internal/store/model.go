@@ -29,6 +29,27 @@ type Issue struct {
 	Status           IssueStatus     `yaml:"status"`
 }
 
+type RepoSnapshot struct {
+	Path            string   `yaml:"path"`
+	Branch          string   `yaml:"branch"`
+	BaseSHA         string   `yaml:"base_sha"`
+	StagedPatch     string   `yaml:"staged_patch,omitempty"`
+	UnstagedPatch   string   `yaml:"unstaged_patch,omitempty"`
+	UntrackedDir    string   `yaml:"untracked_dir,omitempty"`
+	UntrackedFiles  []string `yaml:"untracked_files,omitempty"`
+	ConflictedDir   string   `yaml:"conflicted_dir,omitempty"`
+	ConflictedFiles []string `yaml:"conflicted_files,omitempty"`
+}
+
+type Snapshot struct {
+	Hash      string         `yaml:"hash"`
+	IssueID   string         `yaml:"issue_id"`
+	IssueHash string         `yaml:"issue_hash"`
+	Workspace string         `yaml:"workspace"`
+	CreatedAt string         `yaml:"created_at"`
+	Repos     []RepoSnapshot `yaml:"repos"`
+}
+
 // enums
 type RepoForge string
 

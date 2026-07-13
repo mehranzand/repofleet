@@ -37,11 +37,14 @@ commands/               Cobra CLI layer — flags, output, calls internal/
   root/                 wires factory + registers all subcommands
   repocmd/              repo add / remove / list
   workspacecmd/         workspace switch / remove / config
-  issuecmd/             issue create / switch / sync / status / repo / remove / archive
+  issuecmd/             issue create / switch / sync / status / goto / repo / remove / archive
+  snapshotcmd/          snapshot create / restore / list / remove / prune
 internal/               business logic — not importable outside the module
-  store/                Workspace + Issue types; YAML + pointer files at ~/.config/repofleet/
+  store/                Workspace, Issue, and Snapshot types; YAML + pointer files at ~/.config/repofleet/
+  snapshot/             snapshot capture and restore logic (patch files per repo)
   git/                  concurrent git runner (one goroutine per repo)
   iostreams/            injectable IO + ANSI color helpers
+  util/                 shared helpers (short hash generation, confirmation prompt)
 ```
 
 **Three-layer rule:** `commands/` may import `internal/`. `internal/` packages must not import `commands/`. `cmd/` imports only `commands/root`.
