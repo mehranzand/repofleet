@@ -260,4 +260,6 @@ Sponsor my work at [](https://www.buymeacoffee.com/mehranzand)https://www.buymea
 <a href="https://www.buymeacoffee.com/mehranzand" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
+---
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details and how to contribute.
