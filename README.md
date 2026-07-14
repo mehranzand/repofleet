@@ -18,9 +18,33 @@
   </a>
 </p>
 
-RepoFleet is an issue-centered CLI tool for managing Git workflows across multiple repositories.
+RepoFleet is an issue-centered CLI for managing Git workflows across multiple repositories.
 
-When a feature spans multiple services, RepoFleet lets you create one issue context, branch all repos together, sync and track status across them without switching directories.
+When a feature or bug spans several services, you normally need to create matching branches, fetch updates, and check the status of each repository separately.
+
+## Without RepoFleet
+
+```bash
+cd api
+git switch -c fix/123-auth
+
+cd ../frontend
+git switch -c fix/123-auth
+
+cd ../worker
+git switch -c fix/123-auth
+```
+
+## With RepoFleet
+
+```bash
+rf issue create 123 --name auth --type fix
+rf issue status
+```
+
+RepoFleet creates a single issue context, manages related branches across your repositories, synchronizes them, and shows their status in one dashboard—without repeatedly switching directories.
+
+**One issue. Multiple repositories. One workflow.**
 
 ---
 <p align="center">
