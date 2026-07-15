@@ -1,4 +1,5 @@
 # Contributing to RepoFleet
+We follow a simple principle in development: **iteration over perfection**.
 
 Thanks for your interest in contributing. This document covers how to set up, what patterns to follow, and how to submit changes.
 

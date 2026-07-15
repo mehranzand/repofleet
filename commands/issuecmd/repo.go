@@ -30,12 +30,12 @@ func newRepoAddCmd(f *factory.Factory) *cobra.Command {
 			ws := f.Workspace.Name
 			repoName := args[0]
 
-			id := store.CurrentIssueID(ws)
-			if id == "" {
+			hash := store.CurrentIssueHash(ws)
+			if hash == "" {
 				return fmt.Errorf("no active issue — switch to one with: rf issue switch")
 			}
 
-			issue, err := store.LoadIssue(id)
+			issue, err := store.LoadIssueByHash(ws, hash)
 			if err != nil {
 				return err
 			}
@@ -107,12 +107,12 @@ func newRepoRemoveCmd(f *factory.Factory) *cobra.Command {
 			ws := f.Workspace.Name
 			repoName := args[0]
 
-			id := store.CurrentIssueID(ws)
-			if id == "" {
+			hash := store.CurrentIssueHash(ws)
+			if hash == "" {
 				return fmt.Errorf("no active issue — switch to one with: rf issue switch")
 			}
 
-			issue, err := store.LoadIssue(id)
+			issue, err := store.LoadIssueByHash(ws, hash)
 			if err != nil {
 				return err
 			}

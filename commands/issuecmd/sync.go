@@ -14,12 +14,12 @@ func newSyncCmd(f *factory.Factory) *cobra.Command {
 		Use:   "sync",
 		Short: "Fetch all remotes for every repo in the current issue",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id := store.CurrentIssueID(f.Workspace.Name)
-			if id == "" {
+			hash := store.CurrentIssueHash(f.Workspace.Name)
+			if hash == "" {
 				return fmt.Errorf("no active issue — switch to one with: rf issue switch <id>")
 			}
 
-			ctx, err := store.LoadIssue(id)
+			ctx, err := store.LoadIssueByHash(f.Workspace.Name, hash)
 			if err != nil {
 				return err
 			}

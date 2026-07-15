@@ -1,6 +1,7 @@
 package issuecmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/mehranzand/repofleet/commands/factory"
@@ -11,17 +12,22 @@ import (
 
 func newArchiveCmd(f *factory.Factory) *cobra.Command {
 	return &cobra.Command{
-		Use:   "archive <issue-id>",
-		Short: "Archive a completed issue workspace",
+		Use:   "archive <query>",
+		Short: "Archive a completed issue using its ID, name, or hash",
+		Long:  "Archive an active issue in the current workspace. Only searches active issues — errors if it's already archived.",
 		Args:  cobra.ExactArgs(1),
 		RunE:  func(cmd *cobra.Command, args []string) error {
-			ctx, err := store.LoadIssue(args[0])
+			ctx, err := store.FindIssueByKeyword(f.Workspace.Name, args[0], store.IssueStatusActive)
 			if err != nil {
-				return fmt.Errorf("issue %q not found", args[0])
+				var ambigErr *store.AmbiguousIssueError
+				if errors.As(err, &ambigErr) {
+					return err
+				}
+				return fmt.Errorf("issue %q not found in workspace %q", args[0], f.Workspace.Name)
 			}
 
-			if ctx.Workspace != f.Workspace.Name {
-				return fmt.Errorf("issue %q belongs to workspace %q, not %q", ctx.ID, ctx.Workspace, f.Workspace.Name)
+			if ctx.Status == store.IssueStatusArchived {
+				return fmt.Errorf("issue %q is already archived", ctx.ID)
 			}
 
 			ctx.Status = store.IssueStatusArchived
@@ -29,11 +35,11 @@ func newArchiveCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if store.CurrentIssueID(f.Workspace.Name) == args[0] {
-				_ = store.SetCurrentIssue(f.Workspace.Name, "")
+			if store.CurrentIssueHash(f.Workspace.Name) == ctx.Hash {
+				_ = store.SetCurrentIssueHash(f.Workspace.Name, "")
 			}
 
-			fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Success(fmt.Sprintf("Archived issue %q", args[0])))
+			fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Success(fmt.Sprintf("Archived issue %q", ctx.ID)))
 			return nil
 		},
 	}
