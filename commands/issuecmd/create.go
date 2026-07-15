@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mehranzand/repofleet/commands/factory"
 	"github.com/mehranzand/repofleet/internal/iostreams"
@@ -123,8 +124,15 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 				}
 			}
 
+			hash, err := store.NewIssueHash()
+			if err != nil {
+				return err
+			}
+
 			issue := &store.Issue{
 				ID:               issueID,
+				Hash:             hash,
+				CreatedAt:        time.Now(),
 				Name:             name,
 				ShortDescription: description,
 				Kind:             store.IssueKind(kind),
@@ -133,16 +141,15 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 				Status:           store.IssueStatusActive,
 			}
 
-			existing, err := store.LoadIssuesForWorkspace(f.Workspace.Name)
-			if err != nil {
-				return err
-			}
-			for _, ex := range existing {
-				if strings.EqualFold(ex.ID, issue.ID) {
-					return fmt.Errorf("issue ID %q already exists in this workspace", issue.ID)
+			if issue.Name != "" {
+				existing, err := store.LoadIssuesForWorkspace(f.Workspace.Name, store.IssueStatusActive)
+				if err != nil {
+					return err
 				}
-				if issue.Name != "" && strings.EqualFold(ex.Name, issue.Name) {
-					return fmt.Errorf("issue name %q already exists in this workspace (ID: %s)", issue.Name, ex.ID)
+				for _, ex := range existing {
+					if strings.EqualFold(ex.Name, issue.Name) {
+						return fmt.Errorf("issue name %q already exists in this workspace (ID: %s)", issue.Name, ex.ID)
+					}
 				}
 			}
 
@@ -180,7 +187,7 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			if err := issue.Save(); err != nil {
 				return err
 			}
-			if err := store.SetCurrentIssue(f.Workspace.Name, issue.ID); err != nil {
+			if err := store.SetCurrentIssueHash(f.Workspace.Name, issue.Hash); err != nil {
 				return err
 			}
 

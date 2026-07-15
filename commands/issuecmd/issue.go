@@ -18,25 +18,24 @@ func NewCmd(f *factory.Factory) *cobra.Command {
 			if err := cmd.Help(); err != nil {
 				return err
 			}
-			id := store.CurrentIssueID(f.Workspace.Name)
-			if id != "" {
-				issue, err := store.LoadIssue(id)
-				repoCount := 0
+			hash := store.CurrentIssueHash(f.Workspace.Name)
+			if hash != "" {
+				issue, err := store.LoadIssueByHash(f.Workspace.Name, hash)
 				if err == nil {
-					repoCount = len(issue.Repos)
+					fmt.Fprintf(f.IO.Out, "\n%s %s %s %s %s\n\n",
+						iostreams.Dim("Current issue is"),
+						iostreams.Cyan("#"+issue.ID),
+						iostreams.Dim(fmt.Sprintf("(%d repos) in the", len(issue.Repos))),
+						iostreams.BoldGreen(f.Workspace.Name),
+						iostreams.Dim("workspace"),
+					)
 				}
-				fmt.Fprintf(f.IO.Out, "\n%s %s %s %s %s\n\n",
-					iostreams.Dim("Current issue is"),
-					iostreams.Cyan("#"+id),
-					iostreams.Dim(fmt.Sprintf("(%d repos) in the", repoCount)),
-					iostreams.BoldGreen(f.Workspace.Name),
-					iostreams.Dim("workspace"),
-				)
 			}
 			return nil
 		},
 	}
 	cmd.AddCommand(newCreateCmd(f))
+	cmd.AddCommand(newListCmd(f))
 	cmd.AddCommand(newSwitchCmd(f))
 	cmd.AddCommand(newSyncCmd(f))
 	cmd.AddCommand(newStatusCmd(f))

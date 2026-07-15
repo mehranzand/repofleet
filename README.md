@@ -81,8 +81,14 @@ rf
     │                              --repo         limit to specific repos, comma-separated (default: all in workspace)
     │                              --skip-branch  save context without creating a git branch
     │                              Errors out before creating any branch if a repo's path no longer exists
-    ├── switch [id|name]           Switch to an issue interactively, by ID, or by name
+    ├── list                       List every issue in the workspace, including archived, in a detailed table
+    │                              Columns: ID, Hash, Name, Branch, Status, Repos — current issue marked with *
+    ├── switch [id|name|hash]      Switch to an issue interactively, or by ID, name, or hash
     │                              --archived     include archived issues in the list
+    │                              Each issue has an immutable short hash (like a git commit SHA),
+    │                              shown beside #issue in the interactive list — the same ID can be
+    │                              reused by unrelated issues across different repos; if an ID match
+    │                              is ambiguous, retry with the hash shown in the error
     ├── repo
     │   ├── add <repo-name>        Add a repo to the current issue (creates or switches branch)
     │   │                          Errors if the repo's path no longer exists on disk
@@ -98,8 +104,9 @@ rf
     ├── goto                       Interactively select a repo, cd into it, and switch to the issue branch if needed
     │                              Repos that need a branch switch show a → indicator in the list
     │                              Repos with a missing path show a red ! marker and cannot be selected
-    ├── remove <id>                Remove an issue context (does not delete git branches)
-    └── archive <id>               Archive a completed issue context
+    ├── remove <id|name|hash>      Remove an issue context (does not delete git branches)
+    │                              --archived     also search archived issues
+    └── archive <id|name|hash>     Archive a completed issue context (only searches active issues)
 ```
 
 ---
@@ -209,20 +216,31 @@ rf issue goto
 
 > Shell integration is set up automatically on first run. When prompted, run `source ~/.zshrc` (or your shell's rc file) once to activate it. After that, `rf issue goto` changes your working directory on selection. If the selected repo is not on the issue branch, it is automatically switched to it — repos that need a switch show a `→ branch` indicator in the list.
 
-### 7. Switch between issues
+### 7. List and switch between issues
 
-Pick interactively from the list (current issue shown first):
+See every issue in the workspace, including archived, with full detail (ID, hash, name, branch, status, repos):
+
+```bash
+rf issue list
+```
+
+To switch, pick interactively from the list (current issue shown first):
 
 ```bash
 rf issue switch
 ```
 
-Or switch directly by ID or name:
+Or switch directly by ID, name, or hash:
 
 ```bash
 rf issue switch 123
 rf issue switch auth-fix
+rf issue switch a1b2c3d
 ```
+
+Since the same ID can be reused by unrelated issues in different repos, an ID lookup that matches more
+than one issue returns an error listing each candidate's hash — retry with one of those, or run
+`rf issue switch` with no argument to pick from the interactive list instead.
 
 To include archived issues in the list:
 
@@ -244,11 +262,13 @@ When an issue is done, archive it (keeps the context for reference):
 rf issue archive 123
 ```
 
-To remove it entirely:
+`archive`, `remove`, and `switch` all accept an ID, name, or hash. To remove an issue entirely:
 
 ```bash
 rf issue remove 123
 ```
+
+By default `remove` only searches active issues; add `--archived` to also match archived ones.
 
 ---
 

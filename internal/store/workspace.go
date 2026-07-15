@@ -44,17 +44,17 @@ func SetCurrentWorkspace(name string) error {
 	return os.WriteFile(currentWorkspaceFile(), []byte(name), 0o644)
 }
 
-func CurrentIssueID(wsName string) string {
+func CurrentIssueHash(wsName string) string {
 	return readPointerFile(currentIssueFile(wsName), "")
 }
 
-func SetCurrentIssue(wsName, id string) error {
+func SetCurrentIssueHash(wsName, hash string) error {
 	path := currentIssueFile(wsName)
-	if id == "" {
+	if hash == "" {
 		_ = os.Remove(path)
 		return nil
 	}
-	return os.WriteFile(path, []byte(id), 0o644)
+	return os.WriteFile(path, []byte(hash), 0o644)
 }
 
 func LoadWorkspace(name string) (*Workspace, error) {
