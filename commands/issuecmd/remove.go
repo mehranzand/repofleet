@@ -1,6 +1,7 @@
 package issuecmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/mehranzand/repofleet/commands/factory"
@@ -10,24 +11,32 @@ import (
 )
 
 func newRemoveCmd(f *factory.Factory) *cobra.Command {
-	return &cobra.Command{
-		Use:   "remove <id>",
-		Short: "Remove an issue context by ID",
+	var showArchived bool
+
+	cmd := &cobra.Command{
+		Use:   "remove <query>",
+		Short: "Remove an issue context using its ID, name, or hash.",
 		Long:  "Remove an issue context from the current workspace. Does not delete any git branches.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ws := f.Workspace.Name
 			id := args[0]
 
-			issue, err := store.LoadIssueByIDOrName(ws, id)
-			if err != nil {
-				return fmt.Errorf("issue %q not found in workspace %q", id, ws)
-			}
-			if issue.Workspace != ws {
-				return fmt.Errorf("issue %q belongs to workspace %q, not %q", issue.ID, issue.Workspace, ws)
+			status := store.IssueStatusActive
+			if showArchived {
+				status = ""
 			}
 
-			if err := store.DeleteIssue(ws, issue.ID); err != nil {
+			issue, err := store.FindIssueByKeyword(ws, id, status)
+			if err != nil {
+				var ambigErr *store.AmbiguousIssueError
+				if errors.As(err, &ambigErr) {
+					return err
+				}
+				return fmt.Errorf("issue %q not found in workspace %q", id, ws)
+			}
+
+			if err := store.DeleteIssue(ws, issue.Hash); err != nil {
 				return err
 			}
 
@@ -35,4 +44,7 @@ func newRemoveCmd(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVarP(&showArchived, "archived", "A", false, "also search archived issues")
+	return cmd
 }

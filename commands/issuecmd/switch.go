@@ -1,6 +1,7 @@
 package issuecmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 type issueItem struct {
 	// display columns
 	RawID  string
+	Hash   string
 	ID     string
 	Branch string
 	Status string
@@ -38,35 +40,42 @@ func newSwitchCmd(f *factory.Factory) *cobra.Command {
 		Short: "Switch to an issue, or pick one interactively",
 		Long: `Switch all repos to an issue's branch.
 
-Without an argument, shows an interactive list to select from.
-With an issue ID or name, switches directly.`,
+Without an argument, shows an interactive list to select from (hash shown beside each #issue).
+With an issue ID, name, or hash, switches directly. If the ID matches more than one issue
+(two unrelated issues sharing an ID across different repos), retry with the hash shown in
+the error, or run with no argument to choose interactively.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ws := f.Workspace.Name
 
-			var id string
+			var ctx *store.Issue
 			if len(args) == 1 {
-				id = args[0]
+				id := args[0]
+				resolved, err := store.FindIssueByKeyword(ws, id, "")
+				if err != nil {
+					var ambigErr *store.AmbiguousIssueError
+					if errors.As(err, &ambigErr) {
+						return err
+					}
+					return fmt.Errorf("issue %q not found — create it with: rf issue create %s", id, id)
+				}
+				ctx = resolved
 			} else {
-				selected, err := promptIssue(ws, showArchived, store.CurrentIssueID(ws))
+				selectedHash, err := promptIssue(ws, showArchived, store.CurrentIssueHash(ws))
 				if err != nil {
 					return err
 				}
-				if selected == "" {
+				if selectedHash == "" {
 					return nil
 				}
-				id = selected
+				resolved, err := store.LoadIssueByHash(ws, selectedHash)
+				if err != nil {
+					return err
+				}
+				ctx = resolved
 			}
 
-			ctx, err := store.LoadIssueByIDOrName(ws, id)
-			if err != nil {
-				return fmt.Errorf("issue %q not found — create it with: rf issue create %s", id, id)
-			}
-			if ctx.Workspace != ws {
-				return fmt.Errorf("issue %q belongs to workspace %q, not %q", ctx.ID, ctx.Workspace, ws)
-			}
-
-			if err := store.SetCurrentIssue(ws, ctx.ID); err != nil {
+			if err := store.SetCurrentIssueHash(ws, ctx.Hash); err != nil {
 				return err
 			}
 
@@ -89,8 +98,12 @@ With an issue ID or name, switches directly.`,
 	return cmd
 }
 
-func promptIssue(wsName string, showArchived bool, currentID string) (string, error) {
-	issues, err := store.LoadIssuesForWorkspace(wsName)
+func promptIssue(wsName string, showArchived bool, currentHash string) (string, error) {
+	status := store.IssueStatusActive
+	if showArchived {
+		status = ""
+	}
+	issues, err := store.LoadIssuesForWorkspace(wsName, status)
 	if err != nil {
 		return "", err
 	}
@@ -103,10 +116,7 @@ func promptIssue(wsName string, showArchived bool, currentID string) (string, er
 	var rows []row
 	maxID, maxBranch := 0, 0
 	for _, issue := range issues {
-		if !showArchived && issue.Status == store.IssueStatusArchived {
-			continue
-		}
-		rows = append(rows, row{issue, issue.ID == currentID})
+		rows = append(rows, row{issue, issue.Hash == currentHash})
 		if len(issue.ID) > maxID {
 			maxID = len(issue.ID)
 		}
@@ -142,6 +152,7 @@ func promptIssue(wsName string, showArchived bool, currentID string) (string, er
 	for i, r := range rows {
 		items[i] = issueItem{
 			RawID:       r.issue.ID,
+			Hash:        r.issue.Hash,
 			ID:          "#" + pad(r.issue.ID, maxID),
 			Branch:      pad(r.issue.BranchSlug, maxBranch),
 			Status:      string(r.issue.Status),
@@ -158,6 +169,7 @@ func promptIssue(wsName string, showArchived bool, currentID string) (string, er
 	activeRow :=
 		`> ` +
 		`{{ if .Archived }}{{ .ID | faint }}{{ else }}{{ .ID | green }}{{ end }}` +
+		`  {{ .Hash | faint }}` +
 		`  {{ .Branch | faint }}` +
 		`  {{ .Status | faint }}` +
 		`{{ if .Current }}  {{ "*" | green }}{{ end }}`
@@ -165,6 +177,7 @@ func promptIssue(wsName string, showArchived bool, currentID string) (string, er
 	inactiveRow :=
 		`  ` +
 		`{{ if .Archived }}{{ .ID | faint }}{{ else }}{{ .ID }}{{ end }}` +
+		`  {{ .Hash | faint }}` +
 		`  {{ .Branch | faint }}` +
 		`  {{ .Status | faint }}` +
 		`{{ if .Current }}  {{ "*" | green }}{{ end }}`
@@ -198,5 +211,5 @@ func promptIssue(wsName string, showArchived bool, currentID string) (string, er
 	if err != nil {
 		return "", nil
 	}
-	return items[i].RawID, nil
+	return items[i].Hash, nil
 }

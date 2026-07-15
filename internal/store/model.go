@@ -1,5 +1,7 @@
 package store
 
+import "time"
+
 type Workspace struct {
 	Name          string `yaml:"name"`
 	Repos         []Repo `yaml:"repos"`
@@ -15,6 +17,8 @@ type Repo struct {
 
 type Issue struct {
 	ID               string          `yaml:"id"`
+	Hash             string          `yaml:"hash"`
+	CreatedAt        time.Time       `yaml:"created_at"`
 	Name             string          `yaml:"name,omitempty"`
 	ShortDescription string          `yaml:"short_description,omitempty"`
 	Kind             IssueKind       `yaml:"kind,omitempty"`
