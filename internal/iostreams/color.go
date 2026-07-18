@@ -68,7 +68,7 @@ func Logo(version string) string {
 	}
 
 	if !colorEnabled() {
-		return "█▀█ █▀▀\n█▀▄ █▀▀   ⟫ repofleet" + ver + "\n█ █ █     issue-centered multi-repo manager"
+		return "█▀█ █▀▀\n█▀▄ █▀▀   ⟫ repofleet" + ver + "\n█ █ █     issue-centered git workflow manager"
 	}
 
 	bg := boldGreen
@@ -77,7 +77,7 @@ func Logo(version string) string {
 	rs := reset
 
 	wordmark := bg + "⟫ " + cy + "repo" + bg + "fleet" + rs + di + ver + rs
-	tagline := di + "issue-centered multi-repo manager" + rs
+	tagline := di + "issue-centered git workflow manager" + rs
 
 	return bg + "█▀█ █▀▀" + rs + "\n" +
 		bg + "█▀▄ █▀▀" + rs + "   " + wordmark + "\n" +

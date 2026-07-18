@@ -13,7 +13,7 @@ func NewCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "issue",
 		Short: "Manage issue contexts across repos",
-		Long:  "Create, switch, sync, and archive issue contexts across multiple repositories.",
+		Long:  "Create, switch, sync, and archive issue contexts across one or more repositories.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := cmd.Help(); err != nil {
 				return err
