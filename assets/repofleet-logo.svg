@@ -3,5 +3,5 @@
   <text x="25" y="80.50" font-family="Fira Code, JetBrains Mono, Consolas, monospace" font-size="57.50" font-weight="600" fill="#7EE787">⟫</text>
   <text x="70.25" y="80.50" font-family="Fira Code, JetBrains Mono, Consolas, monospace" font-size="57.50" font-weight="700" fill="#2DD4BF">repo</text>
   <text x="215.25" y="80.50" font-family="Fira Code, JetBrains Mono, Consolas, monospace" font-size="57.50" font-weight="700" fill="#39D353">fleet</text>
-  <text x="25" y="153" font-family="Fira Code, JetBrains Mono, Consolas, monospace" font-size="38.75" font-weight="500" fill="#6E7681">issue-centered multi-repo manager</text>
+  <text x="25" y="153" font-family="Fira Code, JetBrains Mono, Consolas, monospace" font-size="38.75" font-weight="500" fill="#6E7681">issue-centered git workflow manager</text>
 </svg>

@@ -45,6 +45,8 @@ internal/               business logic — not importable outside the module
   git/                  concurrent git runner (one goroutine per repo)
   iostreams/            injectable IO + ANSI color helpers
   util/                 shared helpers (short hash generation, confirmation prompt)
+docs/                   MkDocs source — one file per command group
+mkdocs.yml              MkDocs configuration (Material theme)
 ```
 
 **Three-layer rule:** `commands/` may import `internal/`. `internal/` packages must not import `commands/`. `cmd/` imports only `commands/root`.

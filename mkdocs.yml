@@ -1,0 +1,82 @@
+site_name: RepoFleet
+site_description: Issue-centered CLI for organizing Git workflows. track branches, snapshot uncommitted work, and manage your codebase across one or more repositories
+site_url: https://mehranzand.github.io/repofleet
+repo_url: https://github.com/mehranzand/repofleet
+repo_name: mehranzand/repofleet
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  logo: assets/repofleet-logo.svg
+  favicon: assets/repofleet-logo.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.instant
+    - navigation.instant.progress
+    - search.highlight
+    - search.suggest
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - toc.follow
+    - header.autohide
+
+nav:
+  - Home: index.md
+  - Commands:
+    - workspace: workspace.md
+    - repo: repo.md
+    - issue: issue.md
+    - snapshot: snapshot.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.details
+  - tables
+  - toc:
+      permalink: true
+      title: On this page
+      toc_depth: 2
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/mehranzand/repofleet
+      name: RepoFleet on GitHub

@@ -67,6 +67,24 @@ Type "rf issue switch"
 Enter
 Sleep 2s
 
+Type "rf snapshot create 12345"
+Enter
+Sleep 2s
+
+Type "rf snapshot list"
+Enter
+Sleep 2s
+
+Type "rf snapshot restore 12345 --dry-run"
+Enter
+Sleep 2s
+
+Type "rf snapshot prune --all"
+Enter
+Sleep 1s
+Type "y"
+Enter
+
 Type "rf issue archive 12345"
 Enter
 Sleep 3s

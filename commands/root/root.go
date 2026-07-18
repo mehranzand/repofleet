@@ -49,7 +49,7 @@ func NewRootCmd(appVersion string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:          binaryName,
-		Short:        "Multi-repo Git workflow manager",
+		Short:        "Issue-centered Git workflow manager",
 		Long:         "",
 		Version:      appVersion,
 		SilenceUsage: true,
