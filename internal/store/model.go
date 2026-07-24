@@ -47,6 +47,7 @@ type Snapshot struct {
 	IssueHash string         `yaml:"issue_hash"`
 	Workspace string         `yaml:"workspace"`
 	CreatedAt string         `yaml:"created_at"`
+	Name      string         `yaml:"name,omitempty"`
 	Repos     []RepoSnapshot `yaml:"repos"`
 }
 

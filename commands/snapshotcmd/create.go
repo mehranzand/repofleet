@@ -14,6 +14,7 @@ import (
 func newCreateCmd(f *factory.Factory) *cobra.Command {
 	var clean bool
 	var dryRun bool
+	var name string
 
 	cmd := &cobra.Command{
 		Use:   "create [issue-id]",
@@ -47,7 +48,7 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			}
 			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Dim(fmt.Sprintf("%s snapshot for issue %q (%d repo(s))...", verb, issue.ID, len(issue.Repos))))
 
-			snap, plan, err := snapshot.Create(f.GitRunner, issue, clean, dryRun)
+			snap, plan, err := snapshot.Create(f.GitRunner, issue, name, clean, dryRun)
 			if err != nil {
 				return err
 			}
@@ -69,12 +70,17 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 				}
 			}
 
-			fmt.Fprintf(f.IO.Out, "\n%s\n", iostreams.Success(fmt.Sprintf("Snapshot %s saved for issue %q", snap.Hash, issue.ID)))
+			label := snap.Hash
+			if snap.Name != "" {
+				label = fmt.Sprintf("%s (%s)", snap.Hash, snap.Name)
+			}
+			fmt.Fprintf(f.IO.Out, "\n%s\n", iostreams.Success(fmt.Sprintf("Snapshot %s saved for issue %q", label, issue.ID)))
 			return nil
 		},
 	}
 
 	cmd.Flags().BoolVar(&clean, "clean", false, "reset each repo's working tree to HEAD after saving its diff")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "show what would be captured without writing anything")
+	cmd.Flags().StringVarP(&name, "name", "n", "", "a short memo/tag to help distinguish this snapshot later")
 	return cmd
 }

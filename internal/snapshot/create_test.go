@@ -39,7 +39,7 @@ func TestCreateAndRestore_RoundTrip(t *testing.T) {
 	issue := newTestIssue(t, "1", dir)
 	runner := newTestRunner()
 
-	snap, _, err := Create(runner, issue, false, false)
+	snap, _, err := Create(runner, issue, "", false, false)
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -97,7 +97,7 @@ func TestCreateAndRestore_Conflict(t *testing.T) {
 	issue := newTestIssue(t, "2", dir)
 	runner := newTestRunner()
 
-	snap, _, err := Create(runner, issue, true, false) // --clean: should merge --abort
+	snap, _, err := Create(runner, issue, "", true, false) // --clean: should merge --abort
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -136,7 +136,7 @@ func TestCreate_DryRunWritesNothing(t *testing.T) {
 	runner := newTestRunner()
 
 	before := gitStatus(t, dir)
-	snap, plan, err := Create(runner, issue, false, true)
+	snap, plan, err := Create(runner, issue, "", false, true)
 	if err != nil {
 		t.Fatalf("Create (dry-run): %v", err)
 	}
