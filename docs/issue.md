@@ -133,6 +133,7 @@ rf issue goto
 
 Interactively select a repository, `cd` into it, and switch to the issue branch if the repo is not already on it.
 
+- Prints a "Current issue is #ID (N repos) in the WORKSPACE workspace" header before the picker, same as running bare `rf issue`.
 - The current repo (if your shell is inside one of the issue's repos) is shown first with a `●` indicator.
 - Repos that need a branch switch show a `→ branch` indicator.
 - Repos with a missing path show a red `!` marker and cannot be selected.

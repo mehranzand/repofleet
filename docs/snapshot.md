@@ -20,6 +20,7 @@ Save the current uncommitted diff of every repository in an issue. If no issue I
 |---|---|
 | `--clean` | Reset each repo's working tree to HEAD after saving its diff |
 | `--dry-run` | Show what would be captured without writing anything |
+| `-n`, `--name <name>` | A short memo/tag to help distinguish this snapshot later |
 
 **Examples:**
 
@@ -28,6 +29,8 @@ rf snapshot create              # use current issue (prompts for confirmation)
 rf snapshot create 123
 rf snapshot create 123 --clean  # save then reset each repo to HEAD
 rf snapshot create 123 --dry-run
+rf snapshot create 123 -n "before refactor"
+rf snapshot create 123 --name "before refactor"
 ```
 
 ---
@@ -63,6 +66,10 @@ rf snapshot list
 ```
 
 List all snapshots across all issues in the current workspace, sorted by creation time (newest first).
+
+**Columns:** Hash, Name, Created, Size, Repos
+
+The `Name` column shows the memo/tag passed to `--name` at creation time, or `-` if none was set.
 
 **Examples:**
 

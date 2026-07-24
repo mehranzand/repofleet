@@ -4,6 +4,16 @@ All notable changes to RepoFleet are listed here, newest first.
 
 ---
 
+## v0.7.1 — 2026-07-24
+
+### Added
+- `rf snapshot create` — new `-n`/`--name` flag to tag a snapshot with a short memo, shown in `rf snapshot list`'s new `Name` column and in the create success message
+
+### Changed
+- `rf issue goto` now prints the "Current issue is #ID ..." header before the interactive repo picker, matching bare `rf issue`
+
+---
+
 ## v0.7.0 — 2026-07-12
 
 ### Added
