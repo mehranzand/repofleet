@@ -28,6 +28,7 @@ func PrintSnapshots(w io.Writer, snaps []*store.Snapshot) {
 
 		t := NewTable()
 		t.AddField("Hash", Dim)
+		t.AddField("Name", Dim)
 		t.AddField("Created", Dim)
 		t.AddField("Size", Dim)
 		t.AddField("Repos", Dim)
@@ -43,7 +44,12 @@ func PrintSnapshots(w io.Writer, snaps []*store.Snapshot) {
 			if n, err := util.DirSize(store.SnapshotDir(s.Workspace, s.IssueHash, s.Hash)); err == nil {
 				size = util.FormatBytes(n)
 			}
+			name := s.Name
+			if name == "" {
+				name = "-"
+			}
 			t.AddField(s.Hash, Cyan)
+			t.AddField(name, nil)
 			t.AddField(formatDatetime(s.CreatedAt), Dim)
 			t.AddField(size, nil)
 			t.AddField(fmt.Sprintf("%d/%d changed", changed, len(s.Repos)), Green)

@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Create(runner *git.Runner, issue *store.Issue, clean, dryRun bool) (*store.Snapshot, []string, error) {
+func Create(runner *git.Runner, issue *store.Issue, name string, clean, dryRun bool) (*store.Snapshot, []string, error) {
 	hash, err := store.NewSnapshotHash()
 	if err != nil {
 		return nil, nil, err
@@ -23,6 +23,7 @@ func Create(runner *git.Runner, issue *store.Issue, clean, dryRun bool) (*store.
 		IssueHash: issue.Hash,
 		Workspace: issue.Workspace,
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
+		Name:      name,
 	}
 	chain := NewChain()
 

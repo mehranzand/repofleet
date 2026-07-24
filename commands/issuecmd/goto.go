@@ -32,6 +32,14 @@ func newGotoCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
+			fmt.Fprintf(f.IO.Out, "\n%s %s %s %s %s\n\n",
+				iostreams.Dim("Current issue is"),
+				iostreams.Cyan("#"+ctx.ID),
+				iostreams.Dim(fmt.Sprintf("(%d repos) in the", len(ctx.Repos))),
+				iostreams.BoldGreen(f.Workspace.Name),
+				iostreams.Dim("workspace"),
+			)
+
 			cwd, _ := filepath.Abs(".")
 
 			paths := repoPaths(ctx.Repos)
