@@ -94,6 +94,9 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			"  2. Workspace branch pattern (rf workspace config --branch-pattern)\n" +
 			"  3. Slugified issue ID (fallback)\n\n" +
 			"Errors out before creating any branch if a selected repo's path no longer exists on disk.",
+		Example: "  rf issue create 123\n" +
+			"  rf issue create 123 --repo api,web\n" +
+			"  rf issue create 123 --repo api --repo web --repo mobile",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ws := f.Workspace
