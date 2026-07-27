@@ -72,6 +72,11 @@ func NewRootCmd(appVersion string) *cobra.Command {
 			`{{green "Usage:"}}` + "\n" +
 			`  {{.UseLine}}{{if .HasAvailableSubCommands}} [command]{{end}}` + "\n\n" +
 
+			`{{if .HasExample}}` +
+			`{{green "Examples:"}}` + "\n" +
+			`{{.Example | trimRightSpace | dim}}` + "\n\n" +
+			`{{end}}` +
+
 			`{{if .HasAvailableSubCommands}}` +
 			`{{green "Commands:"}}` + "\n" +
 			`{{range availableCmds .Commands}}` +
