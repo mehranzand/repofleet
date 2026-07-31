@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/mehranzand/repofleet/commands/factory"
@@ -185,5 +186,34 @@ func TestCreateCmd_NoRepoFlagIncludesAllRepos(t *testing.T) {
 		if got := currentBranch(t, paths[name]); got != issue.BranchSlug {
 			t.Errorf("%s branch = %q, want %q", name, got, issue.BranchSlug)
 		}
+	}
+}
+
+func TestCreateCmd_MissingBranchValuesShowPattern(t *testing.T) {
+	f, _ := newTestFactory(t, "repo-a")
+	cmd := newCreateCmd(f)
+
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"33"})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("expected error for missing branch pattern values")
+	}
+	m := "branch pattern requires missing values"
+
+	if !strings.Contains(err.Error(), m) {
+		t.Errorf("actual: %s, it must contain: %s", err.Error(), m)
+	}
+
+	m = "Branch pattern: {type}/{issue}-{description}"
+	if !strings.Contains(err.Error(), m) {
+		t.Errorf("actual: %s, it must contain: %s", err.Error(), m)
+	}
+
+	hash := store.CurrentIssueHash(f.Workspace.Name)
+	if hash != "" {
+		t.Fatalf("expected no issue to be created, but current issue hash is %q", hash)
 	}
 }
