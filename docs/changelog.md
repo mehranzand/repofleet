@@ -4,6 +4,22 @@ All notable changes to RepoFleet are listed here, newest first.
 
 ---
 
+## v0.7.2 — 2026-08-01
+
+### Added
+- `rf issue create --branch` now reuses an existing branch instead of erroring: checks out a matching local branch as-is, or fetches and tracks it from the first configured remote that has it (origin first), only creating a new branch if it exists nowhere; `rf issue repo add` reuses the same logic
+- `--remote <name>` flag to target a specific remote explicitly, for cases where the same branch name exists on more than one remote (e.g. a contributor's fork); persisted as the issue's branch remote so repos added later stay consistent
+- `rf workspace remove` now prompts for confirmation, listing the repo/issue/snapshot counts that will be deleted (omitting any that are zero), and fully deletes the workspace's issues and snapshots along with it
+
+### Changed
+- `rf issue create` now fails atomically — if branch resolution fails for any repo, the issue is not saved and no repo is marked active
+
+### Fixed
+- Branch pattern is now shown when `rf issue create` errors on missing branch values, so users can see what tokens are expected
+- Fixed a bug where a missing `default.yaml` caused an empty "default" workspace to be recreated on every run — including right after a user deliberately removed it
+
+---
+
 ## v0.7.1 — 2026-07-24
 
 ### Added
