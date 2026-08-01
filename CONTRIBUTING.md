@@ -149,6 +149,24 @@ Other examples from this repo: `feat/issue-20-switch-into-first-repo`, `fix/issu
 
 **One commit per PR.** Squash your work into a single commit before opening the PR. If review feedback requires changes, amend that same commit (`git commit --amend`) and force-push your branch — don't add follow-up commits. The PR should stay one commit from open to merge.
 
+## The Merge Window Process
+
+RepoFleet uses a two-week merge window for community contributions.
+
+Pull requests can be submitted at any time. During each two-week cycle, maintainers review, test, and prepare approved pull requests for the next release.
+
+To be included in a release, a pull request should:
+
+- Pass all automated tests and checks.
+- Be approved by a maintainer.
+- Address all requested review comments.
+- Be up to date with the target branch.
+- Include documentation or tests when applicable.
+
+At the end of each merge window, approved pull requests are merged and included in a new RepoFleet release.
+
+Pull requests that are not ready before the window closes will remain open and may be included in the following release.
+
 ---
 
 ## Reporting a bug
