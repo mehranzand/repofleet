@@ -64,7 +64,9 @@ func applyBranchPattern(pattern string, ws *store.Workspace, issue *store.Issue)
 		}
 	}
 	if len(missing) > 0 {
-		return "", fmt.Errorf("branch pattern requires missing values: %s", strings.Join(missing, ", "))
+		errMsg := fmt.Sprintf("branch pattern requires missing values: %s", strings.Join(missing, ", "))
+		errMsg = errMsg + "\nBranch pattern: " + ws.BranchPattern
+		return "", fmt.Errorf("%s", errMsg)
 	}
 
 	pairs := make([]string, 0, len(tokenValues)*2)
