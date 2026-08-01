@@ -165,6 +165,270 @@ func TestCreateCmd_RepoFlagUnknownRepoErrors(t *testing.T) {
 	}
 }
 
+func TestCreateCmd_BranchFlagReusesExistingLocalBranch(t *testing.T) {
+	f, paths := newTestFactory(t, "repo-a")
+	dir := paths["repo-a"]
+
+	runGit := func(args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v\n%s", args, err, out)
+		}
+	}
+	runGit("branch", "existing-branch")
+
+	cmd := newCreateCmd(f)
+	cmd.SetArgs([]string{"111", "--branch", "existing-branch"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+
+	if got := currentBranch(t, dir); got != "existing-branch" {
+		t.Errorf("branch = %q, want %q", got, "existing-branch")
+	}
+}
+
+func TestCreateCmd_BranchFlagTracksExistingRemoteBranch(t *testing.T) {
+	f, paths := newTestFactory(t, "repo-a")
+	dir := paths["repo-a"]
+
+	runGit := func(d string, args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = d
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v (in %s) failed: %v\n%s", args, d, err, out)
+		}
+	}
+
+	originDir := t.TempDir()
+	runGit(originDir, "init", "-q", "--bare")
+	runGit(dir, "remote", "add", "origin", originDir)
+
+	defaultBranch := currentBranch(t, dir)
+	runGit(dir, "checkout", "-b", "remote-branch")
+	runGit(dir, "push", "-q", "origin", "remote-branch")
+	runGit(dir, "checkout", defaultBranch)
+	runGit(dir, "branch", "-D", "remote-branch")
+
+	cmd := newCreateCmd(f)
+	cmd.SetArgs([]string{"222", "--branch", "remote-branch"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+
+	if got := currentBranch(t, dir); got != "remote-branch" {
+		t.Errorf("branch = %q, want %q", got, "remote-branch")
+	}
+
+	trackedRemote := exec.Command("git", "config", "branch.remote-branch.remote")
+	trackedRemote.Dir = dir
+	out, err := trackedRemote.Output()
+	if err != nil {
+		t.Fatalf("git config branch.remote-branch.remote: %v", err)
+	}
+	if got := strings.TrimSpace(string(out)); got != "origin" {
+		t.Errorf("branch.remote-branch.remote = %q, want %q", got, "origin")
+	}
+}
+
+func TestCreateCmd_BranchCheckoutFailureDoesNotCreateIssue(t *testing.T) {
+	f, paths := newTestFactory(t, "repo-a")
+	dir := paths["repo-a"]
+
+	runGit := func(args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v\n%s", args, err, out)
+		}
+	}
+	// a leaf branch named "conflict" blocks creating "conflict/sub" (git ref namespace collision)
+	runGit("branch", "conflict")
+
+	cmd := newCreateCmd(f)
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"999", "--branch", "conflict/sub"})
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("expected error when branch checkout fails")
+	}
+
+	if hash := store.CurrentIssueHash(f.Workspace.Name); hash != "" {
+		t.Fatalf("expected no issue to be created, but current issue hash is %q", hash)
+	}
+	issues, err := store.LoadIssuesForWorkspace(f.Workspace.Name, store.IssueStatusActive)
+	if err != nil {
+		t.Fatalf("load issues: %v", err)
+	}
+	if len(issues) != 0 {
+		t.Fatalf("expected no issues saved, got %+v", issues)
+	}
+}
+
+func TestCreateCmd_BranchFlagTracksExistingBranchOnNonOriginRemote(t *testing.T) {
+	f, paths := newTestFactory(t, "repo-a")
+	dir := paths["repo-a"]
+
+	runGit := func(d string, args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = d
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v (in %s) failed: %v\n%s", args, d, err, out)
+		}
+	}
+
+	upstreamDir := t.TempDir()
+	runGit(upstreamDir, "init", "-q", "--bare")
+	runGit(dir, "remote", "add", "upstream", upstreamDir)
+
+	defaultBranch := currentBranch(t, dir)
+	runGit(dir, "checkout", "-b", "contributor-branch")
+	runGit(dir, "push", "-q", "upstream", "contributor-branch")
+	runGit(dir, "checkout", defaultBranch)
+	runGit(dir, "branch", "-D", "contributor-branch")
+
+	cmd := newCreateCmd(f)
+	cmd.SetArgs([]string{"333", "--branch", "contributor-branch"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+
+	if got := currentBranch(t, dir); got != "contributor-branch" {
+		t.Errorf("branch = %q, want %q", got, "contributor-branch")
+	}
+
+	trackedRemote := exec.Command("git", "config", "branch.contributor-branch.remote")
+	trackedRemote.Dir = dir
+	out, err := trackedRemote.Output()
+	if err != nil {
+		t.Fatalf("git config branch.contributor-branch.remote: %v", err)
+	}
+	if got := strings.TrimSpace(string(out)); got != "upstream" {
+		t.Errorf("branch.contributor-branch.remote = %q, want %q", got, "upstream")
+	}
+}
+
+func TestCreateCmd_RemoteFlagTracksSpecificRemote(t *testing.T) {
+	f, paths := newTestFactory(t, "repo-a")
+	dir := paths["repo-a"]
+
+	runGit := func(d string, args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = d
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v (in %s) failed: %v\n%s", args, d, err, out)
+		}
+	}
+
+	forkedRepoDir := t.TempDir()
+	runGit(forkedRepoDir, "init", "-q", "--bare")
+	runGit(dir, "remote", "add", "forked-repo", forkedRepoDir)
+
+	defaultBranch := currentBranch(t, dir)
+	runGit(dir, "checkout", "-b", "feature/issue-display-branch-pattern")
+	runGit(dir, "push", "-q", "forked-repo", "feature/issue-display-branch-pattern")
+	runGit(dir, "checkout", defaultBranch)
+	runGit(dir, "branch", "-D", "feature/issue-display-branch-pattern")
+
+	cmd := newCreateCmd(f)
+	cmd.SetArgs([]string{"19", "--branch", "feature/issue-display-branch-pattern", "--remote", "forked-repo"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+
+	wantBranch := "feature/issue-display-branch-pattern"
+	if got := currentBranch(t, dir); got != wantBranch {
+		t.Errorf("branch = %q, want %q", got, wantBranch)
+	}
+
+	hash := store.CurrentIssueHash(f.Workspace.Name)
+	issue, err := store.LoadIssueByHash(f.Workspace.Name, hash)
+	if err != nil {
+		t.Fatalf("load issue: %v", err)
+	}
+	if issue.BranchSlug != wantBranch {
+		t.Errorf("issue.BranchSlug = %q, want %q", issue.BranchSlug, wantBranch)
+	}
+	if issue.BranchRemote != "forked-repo" {
+		t.Errorf("issue.BranchRemote = %q, want %q", issue.BranchRemote, "forked-repo")
+	}
+
+	trackedRemote := exec.Command("git", "config", "branch."+wantBranch+".remote")
+	trackedRemote.Dir = dir
+	out, err := trackedRemote.Output()
+	if err != nil {
+		t.Fatalf("git config branch.%s.remote: %v", wantBranch, err)
+	}
+	if got := strings.TrimSpace(string(out)); got != "forked-repo" {
+		t.Errorf("tracked remote = %q, want %q", got, "forked-repo")
+	}
+}
+
+func TestCreateCmd_RemoteFlagErrorsOnUntrackedLocalConflict(t *testing.T) {
+	f, paths := newTestFactory(t, "repo-a")
+	dir := paths["repo-a"]
+
+	runGit := func(d string, args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = d
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v (in %s) failed: %v\n%s", args, d, err, out)
+		}
+	}
+
+	forkedRepoDir := t.TempDir()
+	runGit(forkedRepoDir, "init", "-q", "--bare")
+	runGit(dir, "remote", "add", "forked-repo", forkedRepoDir)
+
+	defaultBranch := currentBranch(t, dir)
+	runGit(dir, "checkout", "-b", "feature/x")
+	runGit(dir, "push", "-q", "forked-repo", "feature/x")
+	runGit(dir, "checkout", defaultBranch)
+
+	cmd := newCreateCmd(f)
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"20", "--branch", "feature/x", "--remote", "forked-repo"})
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("expected error due to untracked local branch conflict")
+	}
+
+	if hash := store.CurrentIssueHash(f.Workspace.Name); hash != "" {
+		t.Fatalf("expected no issue to be created, but current issue hash is %q", hash)
+	}
+}
+
+func TestCreateCmd_RemoteFlagErrorsWhenNotOnRemote(t *testing.T) {
+	f, paths := newTestFactory(t, "repo-a")
+	dir := paths["repo-a"]
+
+	runGit := func(d string, args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = d
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v (in %s) failed: %v\n%s", args, d, err, out)
+		}
+	}
+
+	forkedRepoDir := t.TempDir()
+	runGit(forkedRepoDir, "init", "-q", "--bare")
+	runGit(dir, "remote", "add", "forked-repo", forkedRepoDir)
+
+	cmd := newCreateCmd(f)
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"21", "--branch", "does-not-exist", "--remote", "forked-repo"})
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("expected error because branch does not exist on forked-repo remote")
+	}
+
+	if hash := store.CurrentIssueHash(f.Workspace.Name); hash != "" {
+		t.Fatalf("expected no issue to be created, but current issue hash is %q", hash)
+	}
+}
+
 func TestCreateCmd_NoRepoFlagIncludesAllRepos(t *testing.T) {
 	f, paths := newTestFactory(t, "repo-a", "repo-b")
 

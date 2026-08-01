@@ -25,6 +25,8 @@ type Issue struct {
 	ChangeType       IssueChangeType `yaml:"change_type,omitempty"`
 	Workspace        string          `yaml:"workspace"`
 	BranchSlug       string          `yaml:"branch_slug"`
+
+	BranchRemote     string          `yaml:"branch_remote,omitempty"`
 	Repos            []Repo          `yaml:"repos"`
 	Status           IssueStatus     `yaml:"status"`
 }

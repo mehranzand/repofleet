@@ -80,6 +80,7 @@ func applyBranchPattern(pattern string, ws *store.Workspace, issue *store.Issue)
 
 func newCreateCmd(f *factory.Factory) *cobra.Command {
 	var branch string
+	var remote string
 	var name string
 	var description string
 	var kind string
@@ -95,10 +96,15 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			"  1. --branch flag (overrides everything)\n" +
 			"  2. Workspace branch pattern (rf workspace config --branch-pattern)\n" +
 			"  3. Slugified issue ID (fallback)\n\n" +
-			"Errors out before creating any branch if a selected repo's path no longer exists on disk.",
+			"Per repo, the resolved branch is reused if it already exists: checked out as-is if local, " +
+				"or fetched and tracked from the first remote that has it ('origin' checked first, then any others). " +
+				"Otherwise a new branch is created.\n\n" +
+			"--remote <name> targets a specific remote explicitly (e.g. a contributor's fork added under a " +
+				"different remote name) instead of the ambiguous unqualified search across every remote.",
 		Example: "  rf issue create 123\n" +
 			"  rf issue create 123 --repo api,web\n" +
-			"  rf issue create 123 --repo api --repo web --repo mobile",
+			"  rf issue create 123 --repo api --repo web --repo mobile\n" +
+			"  rf issue create 123 --branch feature/x --remote forked-repo",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ws := f.Workspace
@@ -187,6 +193,42 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 					return err
 				}
 				issue.BranchSlug = slug
+				issue.BranchRemote = remote
+			}
+
+			if skipBranch {
+				if err := issue.Save(); err != nil {
+					return err
+				}
+				if err := store.SetCurrentIssueHash(f.Workspace.Name, issue.Hash); err != nil {
+					return err
+				}
+				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Success(fmt.Sprintf("Issue %q created, tracking existing branches", issue.ID)))
+				return nil
+			}
+
+			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Dim(fmt.Sprintf("Resolving branch %q in %d repo(s)...", issue.BranchSlug, len(issue.Repos))))
+
+			failed := 0
+			for _, r := range issue.Repos {
+				var action branchAction
+				var err error
+				if remote != "" {
+					action, err = checkoutRemoteQualifiedBranch(f, r.Path, remote, issue.BranchSlug)
+				} else {
+					action, err = checkoutOrCreateBranch(f, r.Path, issue.BranchSlug)
+				}
+				if err != nil {
+					failed++
+					fmt.Fprintf(f.IO.Out, "  %s %s: %s\n", iostreams.Red("✗"), r.Path, err)
+				} else {
+					fmt.Fprintf(f.IO.Out, "  %s %s — %s\n", iostreams.Green("✓"), r.Path, action)
+				}
+			}
+
+			if failed > 0 {
+				fmt.Fprintln(f.IO.Out)
+				return fmt.Errorf("failed to resolve branch %q in %d of %d repo(s) — issue not created", issue.BranchSlug, failed, len(issue.Repos))
 			}
 
 			if err := issue.Save(); err != nil {
@@ -196,28 +238,13 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if skipBranch {
-				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Success(fmt.Sprintf("Issue %q created, tracking existing branches", issue.ID)))
-				return nil
-			}
-
-			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Dim(fmt.Sprintf("Creating branch %q in %d repo(s)...", issue.BranchSlug, len(issue.Repos))))
-
-			results := f.GitRunner.Run(repoPaths(issue.Repos), "checkout", "-b", issue.BranchSlug)
-			for _, r := range results {
-				if r.Err != nil {
-					fmt.Fprintf(f.IO.Out, "  %s %s: %s\n", iostreams.Red("✗"), r.RepoPath, r.Err)
-				} else {
-					fmt.Fprintf(f.IO.Out, "  %s %s\n", iostreams.Green("✓"), r.RepoPath)
-				}
-			}
-
 			fmt.Fprintf(f.IO.Out, "\n%s\n", iostreams.Success(fmt.Sprintf("Issue %q is now active on branch %q", issue.ID, issue.BranchSlug)))
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVarP(&branch, "branch", "b", "", "override branch name (ignores all naming rules)")
+	cmd.Flags().StringVarP(&branch, "branch", "b", "", "override branch name (ignores all naming rules); reused if it exists locally or on a remote")
+	cmd.Flags().StringVar(&remote, "remote", "", "target this remote specifically for branch reuse (default: search every configured remote, origin first)")
 	cmd.Flags().StringVarP(&name, "name", "n", "", "issue name (used in {name} token)")
 	cmd.Flags().StringVarP(&description, "description", "d", "", "short description (used in {description} token)")
 	cmd.Flags().StringVar(&kind, "kind", "", "issue kind: bug, feature, task, story (used in {kind} token)")
