@@ -65,7 +65,7 @@ func applyBranchPattern(pattern string, ws *store.Workspace, issue *store.Issue)
 	}
 	if len(missing) > 0 {
 		errMsg := fmt.Sprintf("branch pattern requires missing values: %s", strings.Join(missing, ", "))
-		errMsg = errMsg + "\n" + ws.BranchPattern
+		errMsg = errMsg + "\nBranch pattern: " + ws.BranchPattern
 		return "", fmt.Errorf("%s", errMsg)
 	}
 
