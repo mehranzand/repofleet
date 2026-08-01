@@ -4,21 +4,19 @@ about: Something is not working as expected
 labels: bug
 ---
 
-## Description
-<!-- A clear and concise description of the bug -->
+### Describe the bug
 
-## Steps to reproduce
-```
-repofleet ...
-```
+A clear and concise description of what's wrong.
 
-## Expected behavior
+### Steps to reproduce
 
+1. Run `repofleet ...`
+2. See error
 
-## Actual behavior
+### Expected vs actual behavior
 
+What you expected to happen, and what happened instead.
 
-## Environment
-- OS:
-- Go version (`go version`):
-- repofleet version (`repofleet version`):
+### Version
+
+Paste the output of `repofleet version` and `go version`.

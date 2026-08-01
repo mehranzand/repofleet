@@ -4,14 +4,10 @@ about: Suggest a new feature or improvement
 labels: enhancement
 ---
 
-## Problem
-<!-- What problem does this feature solve? -->
+### Describe the feature or problem you'd like to solve
 
-## Proposed solution
-<!-- How should it work? Include example commands if relevant -->
+A clear and concise description of what's missing or painful today.
 
-```
-repofleet ...
-```
+### Proposed solution
 
-## Alternatives considered
+How should it work? Example commands if relevant.
