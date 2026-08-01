@@ -32,12 +32,20 @@ rf workspace switch mobile-team
 rf workspace remove <name>
 ```
 
-Remove a workspace and all its issue contexts. Repositories on disk are not affected — only the RepoFleet metadata is deleted.
+Remove a workspace along with all its issues and snapshots. Repositories on disk are not affected — only the RepoFleet metadata is deleted.
+
+Prompts for confirmation before deleting, showing how many repos, issues, and snapshots will be removed. You cannot remove the active workspace — switch to another one first.
 
 **Examples:**
 
 ```bash
 rf workspace remove old-project
+```
+
+```
+$ rf workspace remove old-project
+  Remove workspace "old-project"? This will delete 2 repo(s), 5 issue(s), 8 snapshot(s). [y/N] y
+✓ Removed workspace "old-project"
 ```
 
 ---

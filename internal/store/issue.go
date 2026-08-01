@@ -130,3 +130,7 @@ func DeleteIssue(wsName, hash string) error {
 	}
 	return nil
 }
+
+func DeleteIssuesForWorkspace(wsName string) error {
+	return os.RemoveAll(issueDir(wsName))
+}
