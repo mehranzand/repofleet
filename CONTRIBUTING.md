@@ -117,13 +117,37 @@ go vet ./...
 
 ---
 
+## Branch naming convention
+
+Branches follow this pattern:
+
+```
+<type>/issue-<number>-<short-description>
+```
+
+For example, this documentation change lives on `docs/issue-22-improve-docs` — branch type `docs`, issue number `22`, and a short kebab-case description of the work.
+
+- **`<type>`** — matches the kind of change, same vocabulary as commit types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`.
+- **`issue-<number>`** — the GitHub issue this branch addresses. If there's no tracking issue yet, open one first — it keeps the PR linkable via `Closes #N`.
+- **`<short-description>`** — a few kebab-case words summarizing the change, not the full issue title.
+
+Other examples from this repo: `feat/issue-20-switch-into-first-repo`, `fix/issue-command`.
+
 ## Submitting a pull request
 
-1. Fork the repo and create a branch: `git checkout -b feat/your-feature`.
-2. Make your changes — keep each PR focused on one thing.
-3. Run `go build ./...` and `go vet ./...` — both must pass.
-4. Open a PR against `main`. Fill in the PR template.
-5. Link the related issue with `Closes #N` in the PR description.
+1. **Fork the repo** on GitHub, then clone your fork and add the upstream remote:
+   ```bash
+   git clone https://github.com/<your-username>/repofleet
+   cd repofleet
+   git remote add upstream https://github.com/mehranzand/repofleet
+   ```
+2. Create a branch following the [naming convention](#branch-naming-convention) above, e.g. `git checkout -b feat/issue-42-add-rename-command`.
+3. Make your changes — keep each PR focused on one thing.
+4. Run `go build ./...` and `go vet ./...` — both must pass.
+5. Push to your fork and open a PR against `main`. Fill in the PR template.
+6. Link the related issue with `Closes #N` in the PR description.
+
+**One commit per PR.** Squash your work into a single commit before opening the PR. If review feedback requires changes, amend that same commit (`git commit --amend`) and force-push your branch — don't add follow-up commits. The PR should stay one commit from open to merge.
 
 ---
 
