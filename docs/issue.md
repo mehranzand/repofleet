@@ -16,6 +16,8 @@ Create an issue context. The ID must be an integer (e.g. a Jira or GitHub issue 
 
 | Flag | Description |
 |---|---|
+| `--branch <name>`, `-b` | Override branch name (ignores all naming rules) |
+| `--remote <name>` | Target this remote specifically for branch reuse (default: search every configured remote, `origin` first) |
 | `--name <name>` | Short internal name, max 8 chars, no spaces |
 | `--description <text>` | Short description |
 | `--kind <kind>` | `bug` \| `feature` \| `task` \| `story` |
@@ -23,10 +25,20 @@ Create an issue context. The ID must be an integer (e.g. a Jira or GitHub issue 
 | `--repo <name>` | Limit to specific repos (repeatable, or comma-separated) |
 | `--skip-branch` | Save context without creating a git branch — captures each repo's current branch instead |
 
+**Branch name resolution order:**
+
+1. `--branch` flag (overrides everything)
+2. Workspace branch pattern (`rf workspace config --branch-pattern`)
+3. Slugified issue ID (fallback)
+
 **Notes:**
 
 - Errors out before creating any branch if a repo's path no longer exists on disk.
-- The same ID can be reused by unrelated issues in different workspaces. Each issue also gets an immutable short hash (like a git commit SHA) shown in `rf issue list` — use the hash to disambiguate.
+- The same ID can be reused by unrelated issues, including within the same workspace, and creating a duplicate is not blocked. This is intentional: issue trackers are per-repo, so issue #12 in one repo and issue #12 in another are typically unrelated issues that happen to share a number, not the same issue. Each issue context also gets an immutable short hash (like a git commit SHA) shown in `rf issue list` — use the hash to disambiguate between issues sharing an ID.
+- Per repo, the resolved branch name is reused rather than erroring if it already exists: a matching local branch is checked out as-is; otherwise, every configured remote is checked (`origin` first, then any others in the order git reports them) and the branch is fetched and checked out with tracking from the first remote that has it; only if it exists on no remote is a new local branch created.
+- `--remote <name>` skips that multi-remote search and only checks/tracks the branch on the named remote — useful when the same branch name exists on more than one remote (e.g. a contributor's fork) and you need to be explicit about which copy to use. Example: `--branch feature/x --remote forked-repo`. If a local branch already named `feature/x` exists but isn't already tracking `forked-repo/feature/x`, this errors instead of silently resetting or renaming it.
+- When `--remote` is used, it's persisted on the issue (not just applied once at creation). `rf issue repo add` later reuses that same remote for any repo added to the issue afterward, so the whole issue stays consistent about which remote its branch comes from.
+- If branch resolution fails in any repo (e.g. a git ref naming collision), the issue is not created and no repo is registered as active — nothing is saved. Repos where the branch operation already succeeded before the failure are left on that branch; this is not rolled back automatically.
 
 **Examples:**
 
@@ -35,6 +47,7 @@ rf issue create 123 --name auth-fix --kind bug --type fix
 rf issue create 456 --name dashboard --skip-branch
 rf issue create 789 --name api-work --repo service-a --repo service-b
 rf issue create 789 --name api-work --repo service-a,service-b
+rf issue create 987 --branch review/follow-up
 ```
 
 ---
@@ -154,7 +167,7 @@ rf issue goto
 rf issue repo add <repo-name>
 ```
 
-Add a repository to the current issue. If the issue branch already exists in the repo, the repo is switched to it; otherwise the branch is created.
+Add a repository to the current issue. If the issue branch already exists locally in the repo, it's checked out as-is; if it exists on a remote instead (`origin` checked first, then others, unless the issue was created with `--remote`, in which case only that remote is checked), it's fetched and checked out with tracking; otherwise the branch is created.
 
 Errors if the repo's path no longer exists on disk.
 

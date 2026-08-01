@@ -68,19 +68,16 @@ func newRepoAddCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			// check if branch already exists; if so, switch otherwise create
-			exists := f.GitRunner.Run([]string{target.Path}, "rev-parse", "--verify", "--quiet", "refs/heads/"+issue.BranchSlug)
-			var checkoutArgs []string
-			if len(exists) > 0 && exists[0].Err == nil {
-				checkoutArgs = []string{"checkout", issue.BranchSlug}
+			// reuse the branch if it already exists locally or on a remote; otherwise create it.
+			// If the issue was created with --remote, keep targeting that same remote here.
+			var checkoutErr error
+			if issue.BranchRemote != "" {
+				_, checkoutErr = checkoutRemoteQualifiedBranch(f, target.Path, issue.BranchRemote, issue.BranchSlug)
 			} else {
-				checkoutArgs = []string{"checkout", "-b", issue.BranchSlug}
+				_, checkoutErr = checkoutOrCreateBranch(f, target.Path, issue.BranchSlug)
 			}
-			results := f.GitRunner.Run([]string{target.Path}, checkoutArgs...)
-			for _, r := range results {
-				if r.Err != nil {
-					return fmt.Errorf("failed to switch to branch %q in %q: %s", issue.BranchSlug, repoName, r.Err)
-				}
+			if checkoutErr != nil {
+				return fmt.Errorf("failed to switch to branch %q in %q: %s", issue.BranchSlug, repoName, checkoutErr)
 			}
 
 			issue.Repos = append(issue.Repos, *target)

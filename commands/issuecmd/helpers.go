@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mehranzand/repofleet/commands/factory"
 	"github.com/mehranzand/repofleet/internal/store"
 )
 
@@ -28,6 +29,91 @@ func repoPaths(repos []store.Repo) []string {
 		paths[i] = r.Path
 	}
 	return paths
+}
+
+// branchAction describes which path checkoutOrCreateBranch took to reach the branch.
+type branchAction string
+
+const (
+	branchCheckedOut branchAction = "checked out existing local branch"
+	branchCreated    branchAction = "created new local branch"
+)
+
+func branchTrackedFrom(remote string) branchAction {
+	return branchAction(fmt.Sprintf("fetched and tracked from %s", remote))
+}
+
+func repoRemotes(f *factory.Factory, path string) []string {
+	results := f.GitRunner.Run([]string{path}, "remote")
+	if len(results) == 0 || results[0].Err != nil {
+		return nil
+	}
+	var remotes []string
+	for _, line := range strings.Split(results[0].Stdout, "\n") {
+		if name := strings.TrimSpace(line); name != "" {
+			remotes = append(remotes, name)
+		}
+	}
+	for i, r := range remotes {
+		if r == "origin" {
+			remotes[0], remotes[i] = remotes[i], remotes[0]
+			break
+		}
+	}
+	return remotes
+}
+
+func checkoutOrCreateBranch(f *factory.Factory, path, branch string) (branchAction, error) {
+	localExists := f.GitRunner.Run([]string{path}, "rev-parse", "--verify", "--quiet", "refs/heads/"+branch)
+	if len(localExists) > 0 && localExists[0].Err == nil {
+		results := f.GitRunner.Run([]string{path}, "checkout", branch)
+		return branchCheckedOut, results[0].Err
+	}
+
+	for _, remote := range repoRemotes(f, path) {
+		remoteExists := f.GitRunner.Run([]string{path}, "ls-remote", "--exit-code", "--heads", remote, branch)
+		if len(remoteExists) == 0 || remoteExists[0].Err != nil || strings.TrimSpace(remoteExists[0].Stdout) == "" {
+			continue
+		}
+		if fetchResults := f.GitRunner.Run([]string{path}, "fetch", remote, branch); fetchResults[0].Err != nil {
+			return branchTrackedFrom(remote), fetchResults[0].Err
+		}
+		results := f.GitRunner.Run([]string{path}, "checkout", "-b", branch, "--track", remote+"/"+branch)
+		return branchTrackedFrom(remote), results[0].Err
+	}
+
+	results := f.GitRunner.Run([]string{path}, "checkout", "-b", branch)
+	return branchCreated, results[0].Err
+}
+
+func checkoutRemoteQualifiedBranch(f *factory.Factory, path, remote, branchName string) (branchAction, error) {
+	localExists := f.GitRunner.Run([]string{path}, "rev-parse", "--verify", "--quiet", "refs/heads/"+branchName)
+	if len(localExists) > 0 && localExists[0].Err == nil {
+		upstream := f.GitRunner.Run([]string{path}, "rev-parse", "--abbrev-ref", branchName+"@{upstream}")
+		if len(upstream) > 0 && upstream[0].Err == nil && strings.TrimSpace(upstream[0].Stdout) == remote+"/"+branchName {
+			results := f.GitRunner.Run([]string{path}, "checkout", branchName)
+			return branchCheckedOut, results[0].Err
+		}
+		return "", fmt.Errorf(
+			"local branch %q already exists but does not track %s/%s — delete/rename it first, or use a different --branch name",
+			branchName, remote, branchName,
+		)
+	}
+
+	remoteExists := f.GitRunner.Run([]string{path}, "ls-remote", "--exit-code", "--heads", remote, branchName)
+	if len(remoteExists) == 0 || remoteExists[0].Err != nil || strings.TrimSpace(remoteExists[0].Stdout) == "" {
+		detail := ""
+		if len(remoteExists) > 0 && remoteExists[0].Err != nil {
+			detail = fmt.Sprintf(": %s", remoteExists[0].Err)
+		}
+		return "", fmt.Errorf("branch %q not found on remote %q%s", branchName, remote, detail)
+	}
+
+	if fetchResults := f.GitRunner.Run([]string{path}, "fetch", remote, branchName); fetchResults[0].Err != nil {
+		return branchTrackedFrom(remote), fetchResults[0].Err
+	}
+	results := f.GitRunner.Run([]string{path}, "checkout", "-b", branchName, "--track", remote+"/"+branchName)
+	return branchTrackedFrom(remote), results[0].Err
 }
 
 func filterRepos(repos []store.Repo, names []string) ([]store.Repo, error) {
