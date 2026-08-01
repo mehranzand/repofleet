@@ -76,6 +76,13 @@ func LoadWorkspace(name string) (*Workspace, error) {
 }
 
 func DeleteWorkspace(name string) error {
+	if err := DeleteIssuesForWorkspace(name); err != nil {
+		return err
+	}
+	if err := DeleteSnapshotsForWorkspace(name); err != nil {
+		return err
+	}
+
 	_ = os.Remove(currentIssueFile(name))
 	path := workspacePath(name)
 	if err := os.Remove(path); err != nil {
