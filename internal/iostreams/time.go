@@ -5,12 +5,16 @@ import (
 	"time"
 )
 
+func FormatTime(t time.Time) string {
+	return t.Local().Format("2006-01-02 15:04:05")
+}
+
 func formatDatetime(datetime string) string {
 	t, err := time.Parse(time.RFC3339, datetime)
 	if err != nil {
 		return datetime
 	}
-	return t.Local().Format("2006-01-02 15:04:05")
+	return FormatTime(t)
 }
 
 func RelativeAge(d time.Duration) string {

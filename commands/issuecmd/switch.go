@@ -16,7 +16,7 @@ type issueItem struct {
 	// display columns
 	RawID  string
 	Hash   string
-	ID     string
+	Label  string
 	Branch string
 	Status string
 
@@ -25,11 +25,12 @@ type issueItem struct {
 	Archived bool
 
 	// detail panel
-	Name        string
-	Description string
-	Kind        string
-	ChangeType  string
-	Repos       string
+	CreatedAt    string
+	Description  string
+	Kind         string
+	ChangeType   string
+	BranchRemote string
+	Repos        string
 }
 
 func newSwitchCmd(f *factory.Factory) *cobra.Command {
@@ -114,12 +115,9 @@ func promptIssue(wsName string, showArchived bool, currentHash string) (string, 
 	}
 
 	var rows []row
-	maxID, maxBranch := 0, 0
+	maxBranch := 0
 	for _, issue := range issues {
 		rows = append(rows, row{issue, issue.Hash == currentHash})
-		if len(issue.ID) > maxID {
-			maxID = len(issue.ID)
-		}
 		if len(issue.BranchSlug) > maxBranch {
 			maxBranch = len(issue.BranchSlug)
 		}
@@ -149,51 +147,60 @@ func promptIssue(wsName string, showArchived bool, currentHash string) (string, 
 	}
 
 	items := make([]issueItem, len(rows))
+	maxLabel := 0
+	for _, r := range rows {
+		if labelLen := len(iostreams.IssueLabel(r.issue.ID, r.issue.Name)); labelLen > maxLabel {
+			maxLabel = labelLen
+		}
+	}
 	for i, r := range rows {
+		label := iostreams.IssueLabel(r.issue.ID, r.issue.Name)
 		items[i] = issueItem{
-			RawID:       r.issue.ID,
-			Hash:        r.issue.Hash,
-			ID:          "#" + pad(r.issue.ID, maxID),
-			Branch:      pad(r.issue.BranchSlug, maxBranch),
-			Status:      string(r.issue.Status),
-			Current:     r.current,
-			Archived:    r.issue.Status == store.IssueStatusArchived,
-			Name:        r.issue.Name,
-			Description: r.issue.ShortDescription,
-			Kind:        string(r.issue.Kind),
-			ChangeType:  string(r.issue.ChangeType),
-			Repos:       repoNames(r.issue.Repos),
+			RawID:        r.issue.ID,
+			Hash:         r.issue.Hash,
+			Label:        pad(label, maxLabel),
+			Branch:       pad(r.issue.BranchSlug, maxBranch),
+			Status:       string(r.issue.Status),
+			Current:      r.current,
+			Archived:     r.issue.Status == store.IssueStatusArchived,
+			CreatedAt:    iostreams.FormatTime(r.issue.CreatedAt),
+			Description:  r.issue.ShortDescription,
+			Kind:         string(r.issue.Kind),
+			ChangeType:   string(r.issue.ChangeType),
+			BranchRemote: r.issue.BranchRemote,
+			Repos:        repoNames(r.issue.Repos),
 		}
 	}
 
 	activeRow :=
 		`> ` +
-		`{{ if .Archived }}{{ .ID | faint }}{{ else }}{{ .ID | green }}{{ end }}` +
-		`  {{ .Hash | faint }}` +
-		`  {{ .Branch | faint }}` +
-		`  {{ .Status | faint }}` +
-		`{{ if .Current }}  {{ "*" | green }}{{ end }}`
+			`{{ if .Archived }}{{ .Label | faint }}{{ else }}{{ .Label | green }}{{ end }}` +
+			`  {{ .Hash | faint }}` +
+			`  {{ .Branch | faint }}` +
+			`  {{ .Status | faint }}` +
+			`{{ if .Current }}  {{ "*" | green }}{{ end }}`
 
 	inactiveRow :=
 		`  ` +
-		`{{ if .Archived }}{{ .ID | faint }}{{ else }}{{ .ID }}{{ end }}` +
-		`  {{ .Hash | faint }}` +
-		`  {{ .Branch | faint }}` +
-		`  {{ .Status | faint }}` +
-		`{{ if .Current }}  {{ "*" | green }}{{ end }}`
+			`{{ if .Archived }}{{ .Label | faint }}{{ else }}{{ .Label }}{{ end }}` +
+			`  {{ .Hash | faint }}` +
+			`  {{ .Branch | faint }}` +
+			`  {{ .Status | faint }}` +
+			`{{ if .Current }}  {{ "*" | green }}{{ end }}`
 
 	details :=
-		`{{ if .Name }}`        + "\n" + `  {{ "Name:        " | cyan }}{{ .Name }}{{ end }}`        +
-		`{{ if .Description }}` + "\n" + `  {{ "Description: " | cyan }}{{ .Description }}{{ end }}` +
-		`{{ if .Kind }}`        + "\n" + `  {{ "Kind:        " | cyan }}{{ .Kind }}{{ end }}`        +
-		`{{ if .ChangeType }}`  + "\n" + `  {{ "Type:        " | cyan }}{{ .ChangeType }}{{ end }}`  +
-		`{{ if .Repos }}`       + "\n" + `  {{ "Repos:       " | cyan }}{{ .Repos }}{{ end }}`
+		`{{ if .CreatedAt }}` + "\n" + `  {{ "Created:    " | cyan }}{{ .CreatedAt }}{{ end }}` +
+			`{{ if .Description }}` + "\n" + `  {{ "Description: " | cyan }}{{ .Description }}{{ end }}` +
+			`{{ if .Kind }}` + "\n" + `  {{ "Kind:        " | cyan }}{{ .Kind }}{{ end }}` +
+			`{{ if .ChangeType }}` + "\n" + `  {{ "Type:        " | cyan }}{{ .ChangeType }}{{ end }}` +
+			`{{ if .BranchRemote }}` + "\n" + `  {{ "Branch remote: " | cyan }}{{ .BranchRemote }}{{ end }}` +
+			`{{ if .Repos }}` + "\n" + `  {{ "Repos:       " | cyan }}{{ .Repos }}{{ end }}`
 
 	templates := &promptui.SelectTemplates{
 		Label:    `{{ "Select issue:" | faint }}`,
 		Active:   activeRow,
 		Inactive: inactiveRow,
-		Selected: `{{ "✓" | green }} {{ .RawID | cyan }}`,
+		Selected: `{{ "✓" | green }} {{ .Label | cyan }}`,
 		Details:  details,
 		Help:     `{{ "↑↓ navigate  / search  ↵ select" | faint }}`,
 	}
@@ -202,7 +209,7 @@ func promptIssue(wsName string, showArchived bool, currentHash string) (string, 
 		Label:     "Select",
 		Items:     items,
 		Templates: templates,
-		Searcher:  func(input string, index int) bool {
+		Searcher: func(input string, index int) bool {
 			return strings.Contains(strings.ToLower(items[index].RawID), strings.ToLower(input))
 		},
 	}

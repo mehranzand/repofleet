@@ -8,6 +8,14 @@ import (
 	"github.com/mehranzand/repofleet/internal/store"
 )
 
+func IssueLabel(id, name string) string {
+	label := "#" + id
+	if name != "" {
+		label = fmt.Sprintf("%s (%s)", label, name)
+	}
+	return label
+}
+
 func PrintIssues(w io.Writer, issues []*store.Issue, currentHash string) {
 	t := NewTable()
 	t.AddField("", Dim)
@@ -30,12 +38,8 @@ func PrintIssues(w io.Writer, issues []*store.Issue, currentHash string) {
 		if i.Status == store.IssueStatusArchived {
 			statusColor = Dim
 		}
-		id := i.ID
-		if i.Name != "" {
-			id = fmt.Sprintf("%s (%s)", i.ID, i.Name)
-		}
 		t.AddField(marker, markerColor)
-		t.AddField(id, Cyan)
+		t.AddField(IssueLabel(i.ID, i.Name), Cyan)
 		t.AddField(i.Hash, Dim)
 		t.AddField(i.BranchSlug, Dim)
 		t.AddField(string(i.Status), statusColor)
