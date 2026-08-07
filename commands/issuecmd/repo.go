@@ -167,13 +167,11 @@ func newRepoRemoveCmd(f *factory.Factory) *cobra.Command {
 			currentResults := f.GitRunner.Run([]string{target.Path}, "rev-parse", "--abbrev-ref", "HEAD")
 			if len(currentResults) > 0 && currentResults[0].Err == nil &&
 				strings.TrimSpace(currentResults[0].Stdout) == issue.BranchSlug {
+				fallback, err := mainOrMasterBranch(f, target.Path)
 				switched := false
-				for _, fallback := range []string{"main", "master"} {
+				if err == nil {
 					r := f.GitRunner.Run([]string{target.Path}, "checkout", fallback)
-					if len(r) > 0 && r[0].Err == nil {
-						switched = true
-						break
-					}
+					switched = len(r) > 0 && r[0].Err == nil
 				}
 				if !switched {
 					fmt.Fprintf(f.IO.Out, "  %s %s\n", iostreams.Green("✓"),

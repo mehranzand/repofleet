@@ -36,11 +36,24 @@ type branchAction string
 
 const (
 	branchCheckedOut branchAction = "checked out existing local branch"
-	branchCreated    branchAction = "created new local branch"
 )
 
 func branchTrackedFrom(remote string) branchAction {
 	return branchAction(fmt.Sprintf("fetched and tracked from %s", remote))
+}
+
+func branchCreatedFrom(base string) branchAction {
+	return branchAction(fmt.Sprintf("created new local branch from %s", base))
+}
+
+func mainOrMasterBranch(f *factory.Factory, path string) (string, error) {
+	for _, candidate := range []string{"main", "master"} {
+		exists := f.GitRunner.Run([]string{path}, "rev-parse", "--verify", "--quiet", "refs/heads/"+candidate)
+		if len(exists) > 0 && exists[0].Err == nil {
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("neither %q nor %q branch found locally", "main", "master")
 }
 
 func repoRemotes(f *factory.Factory, path string) []string {
@@ -82,8 +95,12 @@ func checkoutOrCreateBranch(f *factory.Factory, path, branch string) (branchActi
 		return branchTrackedFrom(remote), results[0].Err
 	}
 
-	results := f.GitRunner.Run([]string{path}, "checkout", "-b", branch)
-	return branchCreated, results[0].Err
+	base, err := mainOrMasterBranch(f, path)
+	if err != nil {
+		return "", err
+	}
+	results := f.GitRunner.Run([]string{path}, "checkout", "-b", branch, base)
+	return branchCreatedFrom(base), results[0].Err
 }
 
 func checkoutRemoteQualifiedBranch(f *factory.Factory, path, remote, branchName string) (branchAction, error) {

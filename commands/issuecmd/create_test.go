@@ -482,3 +482,55 @@ func TestCreateCmd_MissingBranchValuesShowPattern(t *testing.T) {
 		t.Errorf("actual: %s, it must contain: %s", err.Error(), m)
 	}
 }
+
+func TestCreateCmd_NewBranchIsCutFromMainOrMasterRegardlessOfCurrentBranch(t *testing.T) {
+	f, paths := newTestFactory(t, "repo-a")
+	dir := paths["repo-a"]
+
+	runGit := func(args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v\n%s", args, err, out)
+		}
+	}
+	gitOutput := func(args ...string) string {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.Output()
+		if err != nil {
+			t.Fatalf("git %v failed: %v", args, err)
+		}
+		return strings.TrimSpace(string(out))
+	}
+
+	mainBranch := currentBranch(t, dir)
+	mainHead := gitOutput("rev-parse", "HEAD")
+
+	runGit("checkout", "-b", "unrelated-work")
+	runGit("commit", "--allow-empty", "-q", "-m", "diverging commit")
+
+	out := f.IO.Out.(*bytes.Buffer)
+	cmd := newCreateCmd(f)
+	cmd.SetArgs([]string{"555"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute: %v", err)
+	}
+
+	hash := store.CurrentIssueHash(f.Workspace.Name)
+	issue, err := store.LoadIssueByHash(f.Workspace.Name, hash)
+	if err != nil {
+		t.Fatalf("load issue: %v", err)
+	}
+
+	if got := currentBranch(t, dir); got != issue.BranchSlug {
+		t.Fatalf("branch = %q, want %q", got, issue.BranchSlug)
+	}
+	if got := gitOutput("rev-parse", "HEAD"); got != mainHead {
+		t.Errorf("new branch HEAD = %q, want it to match %q (%s), not the unrelated-work branch", got, mainHead, mainBranch)
+	}
+
+	if !strings.Contains(out.String(), "created new local branch from "+mainBranch) {
+		t.Errorf("expected success output to mention branching from %q, got: %s", mainBranch, out.String())
+	}
+}
