@@ -98,7 +98,8 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			"  3. Slugified issue ID (fallback)\n\n" +
 			"Per repo, the resolved branch is reused if it already exists: checked out as-is if local, " +
 				"or fetched and tracked from the first remote that has it ('origin' checked first, then any others). " +
-				"Otherwise a new branch is created.\n\n" +
+				"Otherwise a new branch is created off the repo's local main (or master), regardless of what " +
+				"branch is currently checked out.\n\n" +
 			"--remote <name> targets a specific remote explicitly (e.g. a contributor's fork added under a " +
 				"different remote name) instead of the ambiguous unqualified search across every remote.",
 		Example: "  rf issue create 123\n" +
