@@ -9,9 +9,12 @@ All notable changes to RepoFleet are listed here, newest first.
 ### Added
 - CI workflow that builds, vets, and tests every pull request targeting `main`
 - `rf issue switch`'s interactive detail panel now shows the issue's created time and branch remote (when `--remote` was used); replaces the old `Name` field, since the name is now shown inline next to the ID in the list
+- Interactive selectors (`rf issue switch`, `rf issue goto`, `rf workspace switch`) now support `q` to quit, in addition to `Ctrl+C`
 
 ### Changed
 - When `rf issue create` or `rf issue repo add` needs to create a genuinely new branch (no existing local or remote branch found), it's now cut from the repo's local `main` (or `master`) instead of whatever branch happens to be checked out — keeps issue branches consistent across a workspace. The success output for each repo says which base was used, e.g. `created new local branch from main`
+- `rf issue list` and `rf issue switch` now list issues newest-created first, instead of the order they were read from disk
+- Terminal bell (triggered by promptui on invalid input) is now silenced in all interactive selectors and prompts
 
 ---
 

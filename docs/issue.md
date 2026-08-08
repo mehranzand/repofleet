@@ -59,7 +59,7 @@ rf issue create 987 --branch review/follow-up
 rf issue list
 ```
 
-List every issue in the current workspace (active and archived) in a detailed table. The currently active issue is marked with `*`.
+List every issue in the current workspace (active and archived) in a detailed table, newest-created first. The currently active issue is marked with `*`.
 
 **Columns:** ID, Hash, Name, Branch, Status, Repos
 
@@ -77,7 +77,7 @@ rf issue list
 rf issue switch [id|name|hash]
 ```
 
-Switch the active issue. Running without an argument opens an interactive selector. The current issue is shown first in the list.
+Switch the active issue. Running without an argument opens an interactive selector, listing the current issue first, then the rest newest-created first.
 
 **Flags:**
 
