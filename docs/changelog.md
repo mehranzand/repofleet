@@ -4,6 +4,17 @@ All notable changes to RepoFleet are listed here, newest first.
 
 ---
 
+## v0.7.3 — 2026-08-07
+
+### Added
+- CI workflow that builds, vets, and tests every pull request targeting `main`
+- `rf issue switch`'s interactive detail panel now shows the issue's created time and branch remote (when `--remote` was used); replaces the old `Name` field, since the name is now shown inline next to the ID in the list
+
+### Changed
+- When `rf issue create` or `rf issue repo add` needs to create a genuinely new branch (no existing local or remote branch found), it's now cut from the repo's local `main` (or `master`) instead of whatever branch happens to be checked out — keeps issue branches consistent across a workspace. The success output for each repo says which base was used, e.g. `created new local branch from main`
+
+---
+
 ## v0.7.2 — 2026-08-01
 
 ### Added
