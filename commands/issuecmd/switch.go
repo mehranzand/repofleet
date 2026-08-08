@@ -3,12 +3,14 @@ package issuecmd
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/mehranzand/repofleet/commands/factory"
 	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
+	"github.com/mehranzand/repofleet/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -202,13 +204,16 @@ func promptIssue(wsName string, showArchived bool, currentHash string) (string, 
 		Inactive: inactiveRow,
 		Selected: `{{ "✓" | green }} {{ .Label | cyan }}`,
 		Details:  details,
-		Help:     `{{ "↑↓ navigate  / search  ↵ select" | faint }}`,
+		Help:     `{{ "↑↓ navigate  / search  ↵ select  q/ctrl+c quit" | faint }}`,
 	}
 
 	prompt := promptui.Select{
 		Label:     "Select",
 		Items:     items,
 		Templates: templates,
+		Size:      10,
+		Stdin:     util.QuitOnQ(os.Stdin),
+		Stdout:    util.SilenceBell(os.Stdout),
 		Searcher: func(input string, index int) bool {
 			return strings.Contains(strings.ToLower(items[index].RawID), strings.ToLower(input))
 		},

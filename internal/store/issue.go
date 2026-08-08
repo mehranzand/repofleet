@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -64,6 +65,9 @@ func LoadIssuesForWorkspace(wsName string, status IssueStatus) ([]*Issue, error)
 		}
 		issues = append(issues, issue)
 	}
+	sort.Slice(issues, func(i, j int) bool {
+		return issues[i].CreatedAt.After(issues[j].CreatedAt)
+	})
 	return issues, nil
 }
 

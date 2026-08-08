@@ -2,6 +2,7 @@ package workspacecmd
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/mehranzand/repofleet/commands/factory"
 	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
+	"github.com/mehranzand/repofleet/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -102,6 +104,7 @@ func promptWorkspace(f *factory.Factory) (string, error) {
 		prompt := promptui.Prompt{
 			Label:    "No workspaces found. Enter a name to create one",
 			Validate: validateWorkspaceName,
+			Stdout:   util.SilenceBell(os.Stdout),
 		}
 		result, err := prompt.Run()
 		if err != nil || result == "" {
@@ -133,13 +136,15 @@ func promptWorkspace(f *factory.Factory) (string, error) {
 		Active:   activeRow,
 		Inactive: inactiveRow,
 		Selected: `{{ "✓" | green }} {{ .Name | cyan }}`,
-		Help:     `{{ "↑↓ navigate  ↵ select" | faint }}`,
+		Help:     `{{ "↑↓ navigate  ↵ select  q/ctrl+c quit" | faint }}`,
 	}
 
 	prompt := promptui.Select{
 		Label:     "Select workspace",
 		Items:     items,
 		Templates: templates,
+		Stdin:     util.QuitOnQ(os.Stdin),
+		Stdout:    util.SilenceBell(os.Stdout),
 	}
 	i, _, err := prompt.Run()
 	if err != nil {
