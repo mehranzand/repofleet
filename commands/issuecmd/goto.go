@@ -10,6 +10,7 @@ import (
 	"github.com/mehranzand/repofleet/commands/factory"
 	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
+	"github.com/mehranzand/repofleet/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -93,7 +94,7 @@ func newGotoCmd(f *factory.Factory) *cobra.Command {
 				Active:   `> {{ if .Missing }}{{ "!" | red }} {{ else if .Current }}{{ "●" | cyan }} {{ else }}  {{ end }}{{ .Name | cyan }}  {{ .Branch | faint }}{{ if .SwitchBranch }}  {{ "→" | faint }}  {{ .SwitchBranch | cyan }}{{ end }}`,
 				Inactive: `  {{ if .Missing }}{{ "!" | red }} {{ else if .Current }}{{ "●" | cyan }} {{ else }}  {{ end }}{{ .Name }}  {{ .Branch | faint }}{{ if .SwitchBranch }}  {{ "→" | faint }}  {{ .SwitchBranch }}{{ end }}`,
 				Selected: `{{ "✓" | green }} {{ .Name | cyan }}`,
-				Help:     `{{ "↑↓ navigate  ↵ select" | faint }}`,
+				Help:     `{{ "↑↓ navigate  ↵ select  q/ctrl+c quit" | faint }}`,
 			}
 
 			tty, ttyErr := openTTY()
@@ -106,10 +107,12 @@ func newGotoCmd(f *factory.Factory) *cobra.Command {
 				Items:     items,
 				Templates: templates,
 				Size:      15,
+				Stdin:     util.QuitOnQ(os.Stdin),
+				Stdout:    util.SilenceBell(os.Stdout),
 			}
 			if ttyErr == nil {
-				prompt.Stdin = tty
-				prompt.Stdout = tty
+				prompt.Stdin = util.QuitOnQ(tty)
+				prompt.Stdout = util.SilenceBell(tty)
 			}
 
 			idx, _, err := prompt.Run()

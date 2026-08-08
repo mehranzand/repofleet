@@ -35,7 +35,7 @@ func repoPaths(repos []store.Repo) []string {
 type branchAction string
 
 const (
-	branchCheckedOut branchAction = "checked out existing local branch"
+	branchCheckedOut branchAction = "branch already exists — switched to it"
 )
 
 func branchTrackedFrom(remote string) branchAction {
