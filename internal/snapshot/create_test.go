@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -67,6 +68,67 @@ func TestCreateAndRestore_RoundTrip(t *testing.T) {
 	}
 	if string(mm) != "mm-base\nstaged-part\nunstaged-part\n" {
 		t.Errorf("mm.txt content not restored correctly, got: %q", mm)
+	}
+}
+
+func TestCreate_NoChangesReturnsErrNoChanges(t *testing.T) {
+	dir := initRepo(t)
+
+	writeFile(t, dir, "tracked.txt", "base\n")
+	runGit(t, dir, "add", ".")
+	runGit(t, dir, "commit", "-qm", "base")
+
+	issue := newTestIssue(t, "5", dir)
+	runner := newTestRunner()
+
+	snap, _, err := Create(runner, issue, "", false, false)
+	if !errors.Is(err, ErrNoChanges) {
+		t.Fatalf("expected ErrNoChanges, got: %v", err)
+	}
+	if snap != nil {
+		t.Errorf("expected nil snapshot, got: %+v", snap)
+	}
+
+	snaps, err := store.ListSnapshotsForIssue(issue.Workspace, issue.Hash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(snaps) != 0 {
+		t.Errorf("expected no snapshots to be created, got: %+v", snaps)
+	}
+}
+
+func TestCreate_CleanResetsStagedChanges(t *testing.T) {
+	dir := initRepo(t)
+
+	writeFile(t, dir, "tracked.txt", "base\n")
+	runGit(t, dir, "add", ".")
+	runGit(t, dir, "commit", "-qm", "base")
+
+	writeFile(t, dir, "tracked.txt", "base\nstaged-change\n")
+	runGit(t, dir, "add", "tracked.txt")
+
+	if gitStatus(t, dir) == "" {
+		t.Fatal("expected a staged change before Create")
+	}
+
+	issue := newTestIssue(t, "4", dir)
+	runner := newTestRunner()
+
+	if _, _, err := Create(runner, issue, "", true, false); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if got := gitStatus(t, dir); got != "" {
+		t.Fatalf("expected --clean to reset staged changes, got:\n%s", got)
+	}
+
+	content, err := os.ReadFile(dir + "/tracked.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(content) != "base\n" {
+		t.Errorf("expected working tree back at HEAD content, got: %q", content)
 	}
 }
 
