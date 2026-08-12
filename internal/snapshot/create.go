@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,21 @@ import (
 	"github.com/mehranzand/repofleet/internal/util/git"
 	"gopkg.in/yaml.v3"
 )
+
+var ErrNoChanges = errors.New("no changes to snapshot")
+
+func HasChanges(runner *git.Runner, issue *store.Issue) (bool, error) {
+	for _, repo := range issue.Repos {
+		status, err := runOne(runner, repo.Path, "status", "--porcelain")
+		if err != nil {
+			return false, fmt.Errorf("%s: %w", repo.Path, err)
+		}
+		if strings.TrimSpace(status) != "" {
+			return true, nil
+		}
+	}
+	return false, nil
+}
 
 func Create(runner *git.Runner, issue *store.Issue, name string, clean, dryRun bool) (*store.Snapshot, []string, error) {
 	hash, err := store.NewSnapshotHash()
@@ -111,6 +127,17 @@ func Create(runner *git.Runner, issue *store.Issue, name string, clean, dryRun b
 		snap.Repos = append(snap.Repos, rs)
 	}
 
+	anyChanges := false
+	for _, rs := range snap.Repos {
+		if rs.StagedPatch != "" || rs.UnstagedPatch != "" || len(rs.UntrackedFiles) > 0 || len(rs.ConflictedFiles) > 0 {
+			anyChanges = true
+			break
+		}
+	}
+	if !anyChanges {
+		return nil, nil, ErrNoChanges
+	}
+
 	metaData, err := yaml.Marshal(snap)
 	if err != nil {
 		return nil, nil, err
@@ -126,7 +153,7 @@ func Create(runner *git.Runner, issue *store.Issue, name string, clean, dryRun b
 			if c.hadConflicts {
 				plan = append(plan, fmt.Sprintf("git merge --abort (%s)", c.repoPath))
 			} else {
-				plan = append(plan, fmt.Sprintf("git checkout -- . (%s)", c.repoPath))
+				plan = append(plan, fmt.Sprintf("git reset --hard HEAD (%s)", c.repoPath))
 			}
 			if c.hadUntracked {
 				plan = append(plan, fmt.Sprintf("git clean -fd (%s)", c.repoPath))
@@ -143,13 +170,11 @@ func Create(runner *git.Runner, issue *store.Issue, name string, clean, dryRun b
 		for _, c := range cleanups {
 			if c.hadConflicts {
 				// Aborting is the only way to leave no unmerged paths behind;
-				// this discards the in-progress merge entirely (its content
-				// is already captured above).
 				if _, err := runOne(runner, c.repoPath, "merge", "--abort"); err != nil {
 					return nil, nil, fmt.Errorf("%s: --clean failed: %w", c.repoPath, err)
 				}
-				// discard tracked changes, back to HEAD
-			} else if _, err := runOne(runner, c.repoPath, "checkout", "--", "."); err != nil {
+				// discard staged and unstaged tracked changes, back to HEAD
+			} else if _, err := runOne(runner, c.repoPath, "reset", "--hard", "HEAD"); err != nil {
 				return nil, nil, fmt.Errorf("%s: --clean failed: %w", c.repoPath, err)
 			}
 			if c.hadUntracked {

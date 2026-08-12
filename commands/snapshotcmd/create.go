@@ -1,6 +1,7 @@
 package snapshotcmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/mehranzand/repofleet/commands/factory"
@@ -37,6 +38,14 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 				if err != nil {
 					return err
 				}
+				hasChanges, err := snapshot.HasChanges(f.GitRunner, issue)
+				if err != nil {
+					return err
+				}
+				if !hasChanges {
+					fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Dim(fmt.Sprintf("No changes to snapshot for issue %q", issue.ID)))
+					return nil
+				}
 				if !util.Confirm(fmt.Sprintf("Create snapshot for current issue #%s?", issue.ID)) {
 					return nil
 				}
@@ -49,6 +58,10 @@ func newCreateCmd(f *factory.Factory) *cobra.Command {
 			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Dim(fmt.Sprintf("%s snapshot for issue %q (%d repo(s))...", verb, issue.ID, len(issue.Repos))))
 
 			snap, plan, err := snapshot.Create(f.GitRunner, issue, name, clean, dryRun)
+			if errors.Is(err, snapshot.ErrNoChanges) {
+				fmt.Fprintf(f.IO.Out, "%s\n", iostreams.Dim(fmt.Sprintf("No changes to snapshot for issue %q", issue.ID)))
+				return nil
+			}
 			if err != nil {
 				return err
 			}
