@@ -2,15 +2,49 @@ package issuecmd
 
 import (
 	"fmt"
+	"io"
+	"strings"
 
 	"github.com/mehranzand/repofleet/commands/factory"
 	"github.com/mehranzand/repofleet/internal/iostreams"
 	"github.com/mehranzand/repofleet/internal/store"
+	gitutil "github.com/mehranzand/repofleet/internal/util/git"
 	"github.com/spf13/cobra"
 )
 
+func message(r gitutil.Result) string {
+	msg := strings.TrimSpace(r.Stdout)
+	if msg == "" {
+		msg = strings.TrimSpace(r.Stderr)
+	}
+	return msg
+}
+
+func printMessage(out io.Writer, msg string) {
+	if msg == "" {
+		return
+	}
+	for _, line := range strings.Split(msg, "\n") {
+		fmt.Fprintf(out, "      %s\n", iostreams.Dim(line))
+	}
+}
+
+func fetchUpdateLines(msg string) []string {
+	var lines []string
+	for _, line := range strings.Split(msg, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "Fetching ") || strings.HasPrefix(trimmed, "From ") {
+			continue
+		}
+		lines = append(lines, line)
+	}
+	return lines
+}
+
 func newSyncCmd(f *factory.Factory) *cobra.Command {
-	return &cobra.Command{
+	var rebase bool
+
+	cmd := &cobra.Command{
 		Use:   "sync",
 		Short: "Fetch all remotes for every repo in the current issue",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -27,14 +61,57 @@ func newSyncCmd(f *factory.Factory) *cobra.Command {
 			paths := repoPaths(ctx.Repos)
 			fmt.Fprintf(f.IO.Out, "%s\n\n", iostreams.Dim(fmt.Sprintf("Fetching %d repo(s)...", len(paths))))
 
+			var fetched []string
 			for _, r := range f.GitRunner.Run(paths, "fetch", "--all") {
 				if r.Err != nil {
 					fmt.Fprintf(f.IO.Out, "  %s %s: %s\n", iostreams.Red("✗"), r.RepoPath, r.Err)
+					continue
+				}
+
+				updates := fetchUpdateLines(message(r))
+				if len(updates) == 0 {
+					fmt.Fprintf(f.IO.Out, "  %s %s %s\n", iostreams.Green("✓"), r.RepoPath, iostreams.Dim("(up to date)"))
 				} else {
-					fmt.Fprintf(f.IO.Out, "  %s %s\n", iostreams.Green("✓"), r.RepoPath)
+					fmt.Fprintf(f.IO.Out, "  %s %s %s\n", iostreams.Green("✓"), r.RepoPath, iostreams.Dim("(changes fetched)"))
+					printMessage(f.IO.Out, strings.Join(updates, "\n"))
+				}
+				fetched = append(fetched, r.RepoPath)
+			}
+
+			if rebase && len(fetched) > 0 {
+				fmt.Fprintf(f.IO.Out, "\n%s\n\n", iostreams.Dim(fmt.Sprintf("Rebasing %d repo(s)...", len(fetched))))
+
+				for _, path := range fetched {
+					current := f.GitRunner.Run([]string{path}, "rev-parse", "--abbrev-ref", "HEAD")[0]
+					if current.Err != nil {
+						fmt.Fprintf(f.IO.Out, "  %s %s: %s\n", iostreams.Red("✗"), path, current.Err)
+						continue
+					}
+					if strings.TrimSpace(current.Stdout) != ctx.BranchSlug {
+						fmt.Fprintf(f.IO.Out, "  %s %s\n", iostreams.Dim("−"), iostreams.Dim(fmt.Sprintf("%s (not on issue branch — skipped)", path)))
+						continue
+					}
+
+					base, err := mainOrMasterBranch(f, path)
+					if err != nil {
+						fmt.Fprintf(f.IO.Out, "  %s %s: %s\n", iostreams.Red("✗"), path, err)
+						continue
+					}
+
+					r := f.GitRunner.Run([]string{path}, "rebase", "origin/"+base)[0]
+					if r.Err != nil {
+						fmt.Fprintf(f.IO.Out, "  %s %s: %s\n", iostreams.Red("✗"), r.RepoPath, r.Err)
+					} else {
+						fmt.Fprintf(f.IO.Out, "  %s %s %s\n", iostreams.Green("✓"), r.RepoPath, iostreams.Dim("(rebased onto origin/"+base+")"))
+						printMessage(f.IO.Out, message(r))
+					}
 				}
 			}
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&rebase, "rebase", false, "rebase each repo onto its upstream after fetching")
+
+	return cmd
 }

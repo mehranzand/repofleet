@@ -117,6 +117,7 @@ rf
 │   ├── list                       List every issue in the workspace
 │   ├── switch [id|name|hash]      Switch to an issue interactively or by ID, name, or hash
 │   ├── sync                       Fetch all remotes for every repo in the current issue
+│   │                              --rebase
 │   ├── status                     Show status dashboard for the current issue
 │   ├── goto                       Interactively select a repo and cd into it
 │   ├── repo

@@ -105,15 +105,24 @@ rf issue switch --archived         # include archived in selector
 ## rf issue sync
 
 ```
-rf issue sync
+rf issue sync [--rebase]
 ```
 
-Fetch all remotes for every repository in the current issue. Keeps remote refs up to date without modifying local branches.
+Fetch all remotes for every repository in the current issue, printing whether each repo was already up to date or had changes fetched.
+
+With `--rebase`, repos currently on the issue branch are then rebased onto `origin/<main-or-master>`. Repos on a different branch are skipped rather than rebased.
+
+**Flags:**
+
+| Flag | Description |
+| --- | --- |
+| `--rebase` | Rebase the issue branch onto `origin/<main-or-master>` after fetching |
 
 **Examples:**
 
 ```bash
 rf issue sync
+rf issue sync --rebase
 ```
 
 ---
