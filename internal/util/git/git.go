@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
 type Result struct {
 	RepoPath string
 	Stdout   string
+	Stderr   string
 	Err      error
 }
 
@@ -49,11 +51,16 @@ func run(repoPath string, args ...string) Result {
 
 	err := cmd.Run()
 	if err != nil {
-		err = fmt.Errorf("%w: %s", err, stderr.String())
+		msg := strings.TrimSpace(stderr.String())
+		if msg == "" {
+			msg = strings.TrimSpace(stdout.String())
+		}
+		err = fmt.Errorf("%w: %s", err, msg)
 	}
 	return Result{
 		RepoPath: repoPath,
 		Stdout:   stdout.String(),
+		Stderr:   stderr.String(),
 		Err:      err,
 	}
 }
