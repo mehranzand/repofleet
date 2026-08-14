@@ -4,6 +4,20 @@ All notable changes to RepoFleet are listed here, newest first.
 
 ---
 
+## v0.7.4 — 2026-08-14
+
+### Added
+- `rf issue sync --rebase` — after fetching, rebases each repo currently on the issue branch onto `origin/<main-or-master>`; repos on a different branch are skipped
+
+### Changed
+- `rf issue sync` now reports whether each repo was already up to date or had changes fetched, instead of a plain success mark
+
+### Fixed
+- `rf snapshot create` now skips a repo entirely when it has no changes, instead of prompting for or writing an empty snapshot
+- `--clean` on snapshot restore now discards staged changes too (`git reset --hard HEAD`), not just unstaged ones
+
+---
+
 ## v0.7.3 — 2026-08-07
 
 ### Added
