@@ -5,7 +5,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -16,50 +18,88 @@ const (
 	PowerShell = "powershell"
 )
 
-const InstallMarker = "# repofleet-shell-integration"
+const markerPrefix = "# repofleet-shell-integration"
 
-const bashZshSnippet = InstallMarker + `
+const integrationVersion = 3
+
+func startMarker(v int) string {
+	return fmt.Sprintf("%s-start v%d", markerPrefix, v)
+}
+
+const endMarker = markerPrefix + "-end"
+
+func block(body string) string {
+	return startMarker(integrationVersion) + body + "\n" + endMarker
+}
+
+var legacyMarkerRe = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(markerPrefix) + `(?: v(\d+))?$`)
+
+var blockRe = regexp.MustCompile(`(?ms)^` + regexp.QuoteMeta(markerPrefix) + `-start v(\d+)$.*?^` + regexp.QuoteMeta(endMarker) + `$`)
+
+// installedVersion returns the highest shell-integration version marker
+func installedVersion(content string) int {
+	max := -1
+	for _, m := range legacyMarkerRe.FindAllStringSubmatch(content, -1) {
+		v := 0
+		if m[1] != "" {
+			if n, err := strconv.Atoi(m[1]); err == nil {
+				v = n
+			}
+		}
+		if v > max {
+			max = v
+		}
+	}
+	for _, m := range blockRe.FindAllStringSubmatch(content, -1) {
+		if n, err := strconv.Atoi(m[1]); err == nil && n > max {
+			max = n
+		}
+	}
+	return max
+}
+
+var bashZshSnippet = block(`
 rf() {
-  if [[ "$1" == "issue" && "$2" == "goto" ]]; then
+  if [[ "$1" == "issue" && ( "$2" == "goto" || "$2" == "switch" ) ]]; then
     local tmp p
     tmp=$(mktemp) || return 1
-    command rf issue goto --out "$tmp" "${@:3}"
+    command rf issue "$2" --out "$tmp" "${@:3}"
     p=$(cat "$tmp" 2>/dev/null)
     rm -f "$tmp"
     [ -n "$p" ] && cd "$p"
   else
     command rf "$@"
   fi
-}`
+}`)
 
-const fishSnippet = InstallMarker + `
+var fishSnippet = block(`
 function rf
-  if test "$argv[1]" = "issue" -a "$argv[2]" = "goto"
+  if test "$argv[1]" = "issue" -a \( "$argv[2]" = "goto" -o "$argv[2]" = "switch" \)
     set tmp (mktemp)
-    command rf issue goto --out $tmp $argv[3..]
+    command rf issue $argv[2] --out $tmp $argv[3..]
     set p (cat $tmp 2>/dev/null)
     rm -f $tmp
     test -n "$p" && cd $p
   else
     command rf $argv
   end
-end`
+end`)
 
-const powershellSnippet = InstallMarker + `
+var powershellSnippet = block(`
 function rf {
   $bin = (Get-Command rf -CommandType Application -ErrorAction SilentlyContinue).Source
   if (-not $bin) { Write-Error "rf binary not found in PATH"; return }
-  if ($args[0] -eq "issue" -and $args[1] -eq "goto") {
+  if ($args[0] -eq "issue" -and ($args[1] -eq "goto" -or $args[1] -eq "switch")) {
     $tmp = [System.IO.Path]::GetTempFileName()
     $rest = $args | Select-Object -Skip 2
-    & $bin issue goto --out $tmp @rest
+    & $bin issue $args[1] --out $tmp @rest
     $p = Get-Content $tmp -ErrorAction SilentlyContinue
     Remove-Item $tmp -ErrorAction SilentlyContinue
     if ($p) { Set-Location $p }
   } else {
     & $bin @args
   }
-}`
+}`)
 
 type shellDef struct {
 	snippet string
@@ -134,16 +174,23 @@ func installTo(snip, rcPath string) (bool, error) {
 		return false, err
 	}
 	existing, _ := os.ReadFile(rcPath)
-	if strings.Contains(string(existing), InstallMarker) {
+	content := string(existing)
+
+	if installedVersion(content) >= integrationVersion {
 		return false, nil
 	}
-	f, err := os.OpenFile(rcPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
+
+	var newContent string
+	if loc := blockRe.FindStringIndex(content); loc != nil {
+		newContent = content[:loc[0]] + snip + content[loc[1]:]
+	} else {
+		newContent = content + "\n" + snip + "\n"
+	}
+
+	if err := os.WriteFile(rcPath, []byte(newContent), 0o644); err != nil {
 		return false, err
 	}
-	defer f.Close()
-	_, err = fmt.Fprintf(f, "\n%s\n", snip)
-	return err == nil, err
+	return true, nil
 }
 
 func Install(sh string) (installed bool, rcPath string, err error) {

@@ -86,11 +86,13 @@ Switch the active issue. Running without an argument opens an interactive select
 | Flag | Description |
 |---|---|
 | `--archived`, `-A` | Include archived issues in the list |
+| `--out <file>` | Write the first repo's path to this file when switching from outside any issue repo (used internally by the shell wrapper) |
 
 **Notes:**
 
 - Accepts an ID, short name, or immutable hash.
 - If an ID matches more than one issue, the command errors and lists each candidate's hash; retry with one of those, or run `rf issue switch` with no argument.
+- If the shell is not already inside one of the issue's repos, `cd`s into the first one after switching (shell integration required — see `rf issue goto`). If your shell isn't in one of the repos and no repo path exists on disk, nothing is printed and no `cd` happens.
 
 **Examples:**
 
