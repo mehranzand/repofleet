@@ -18,9 +18,13 @@ Save the current uncommitted diff of every repository in an issue. If no issue I
 
 | Flag | Description |
 |---|---|
-| `--clean` | Reset each repo's working tree to HEAD after saving its diff |
+| `--clean` | Reset each repo's working tree to HEAD (`git reset --hard HEAD`, discarding both staged and unstaged changes) after saving its diff |
 | `--dry-run` | Show what would be captured without writing anything |
 | `-n`, `--name <name>` | A short memo/tag to help distinguish this snapshot later |
+
+**Notes:**
+
+- If there are no uncommitted changes in any repo, the snapshot is skipped entirely ("No changes to snapshot for issue ...") and nothing is written. For the active-issue case, this check happens before the confirmation prompt, so the prompt only appears when there's actually something to save.
 
 **Examples:**
 

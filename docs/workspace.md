@@ -4,7 +4,7 @@ Manage workspaces. A workspace groups a set of repositories together and holds a
 
 A `default` workspace is created automatically on first run.
 
-Running `rf workspace` with no subcommand prints the currently selected workspace.
+Running `rf workspace` with no subcommand prints command help, followed by the currently selected workspace and its repo count.
 
 ---
 
@@ -14,13 +14,20 @@ Running `rf workspace` with no subcommand prints the currently selected workspac
 rf workspace switch [name]
 ```
 
-Switch to a workspace by name. If no workspace with that name exists, it is created automatically.
+Switch to a workspace by name, or run with no argument for an interactive picker. If no workspace with the given name exists, it is created automatically.
 
 **Name rules:** letters, numbers, hyphens, and underscores only.
+
+**Notes:**
+
+- With no argument, opens an interactive list of existing workspaces (current one marked), or, if none exist yet, prompts "No workspaces found. Enter a name to create one".
+- Switching to the workspace you're already in is a no-op (prints "Already in workspace ...").
+- On switching, prints whether the workspace was newly created or just switched to, then lists its repos if it has any.
 
 **Examples:**
 
 ```bash
+rf workspace switch          # interactive picker
 rf workspace switch default
 rf workspace switch backend
 rf workspace switch mobile-team

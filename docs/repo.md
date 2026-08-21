@@ -16,8 +16,15 @@ Add a repository to the current workspace. The forge (GitHub, GitLab, etc.) is a
 
 | Flag | Description |
 |---|---|
-| `--forge <forge>` | Override the auto-detected forge |
-| `--remote <url>` | Override the detected remote URL |
+| `--name <name>`, `-n` | Name for the repo (default: directory basename) |
+| `--forge <forge>`, `-f` | Override the auto-detected forge (`github` or `gitlab`) |
+| `--remote <url>`, `-u` | Override the detected remote URL (default: `git remote get-url origin`) |
+
+**Notes:**
+
+- `<path>` must exist and be a git repository, or the command errors.
+- Errors if a repo with the same name, or the same path, already exists in the workspace.
+- If `--forge` isn't given and the forge can't be auto-detected from the remote URL, errors asking for `--forge github` or `--forge gitlab` explicitly.
 
 **Examples:**
 
@@ -25,6 +32,7 @@ Add a repository to the current workspace. The forge (GitHub, GitLab, etc.) is a
 rf repo add ~/code/service-a
 rf repo add ~/code/service-b --forge github
 rf repo add .                              # add the current directory
+rf repo add ~/code/service-c --name svc-c
 ```
 
 ---

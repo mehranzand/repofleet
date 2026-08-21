@@ -20,12 +20,12 @@ Create an issue context. The ID must be an integer (e.g. a Jira or GitHub issue 
 |---|---|
 | `--branch <name>`, `-b` | Override branch name (ignores all naming rules) |
 | `--remote <name>` | Target this remote specifically for branch reuse (default: search every configured remote, `origin` first) |
-| `--name <name>` | Short internal name, max 8 chars, no spaces |
-| `--description <text>` | Short description |
+| `--name <name>`, `-n` | Short internal name, max 8 chars, letters/numbers/hyphens/underscores only |
+| `--description <text>`, `-d` | Short description |
 | `--kind <kind>` | `bug` \| `feature` \| `task` \| `story` |
 | `--type <type>` | `feat` \| `fix` \| `chore` \| `docs` \| `refactor` \| `test` |
 | `--repo <name>` | Limit to specific repos (repeatable, or comma-separated) |
-| `--skip-branch` | Save context without creating a git branch; captures each repo's current branch instead |
+| `--skip-branch` | Save context without creating a git branch; captures the first repo's current branch and uses it as the issue's branch for all repos |
 
 **Branch name resolution order:**
 
@@ -85,7 +85,7 @@ Switch the active issue. Running without an argument opens an interactive select
 
 | Flag | Description |
 |---|---|
-| `--archived` | Include archived issues in the list |
+| `--archived`, `-A` | Include archived issues in the list |
 
 **Notes:**
 
@@ -224,7 +224,7 @@ Remove an issue context entirely. Does not delete git branches.
 
 | Flag | Description |
 |---|---|
-| `--archived` | Also search archived issues |
+| `--archived`, `-A` | Also search archived issues |
 
 **Examples:**
 

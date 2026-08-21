@@ -14,7 +14,7 @@ All notable changes to RepoFleet are listed here, newest first.
 
 ### Fixed
 - `rf snapshot create` now skips a repo entirely when it has no changes, instead of prompting for or writing an empty snapshot
-- `--clean` on snapshot restore now discards staged changes too (`git reset --hard HEAD`), not just unstaged ones
+- `--clean` on `rf snapshot create` now discards staged changes too (`git reset --hard HEAD`), not just unstaged ones
 
 ---
 

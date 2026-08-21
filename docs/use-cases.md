@@ -78,7 +78,7 @@ Resolving branch "fix/123-auth-fix" in 2 repo(s)...
 From there, reviewing is just:
 
 ```bash
-rf issue status   # diff/behind-ahead across every repo, one table
+rf issue status   # checkout, last commit, and uncommitted diff size across every repo, one table
 rf issue goto      # jump into whichever repo needs a closer look
 ```
 

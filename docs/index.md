@@ -42,6 +42,7 @@ RepoFleet stores all data in `~/.config/repofleet/`:
 ```
 ~/.config/repofleet/
   workspaces/          workspace configs and issue contexts
+    .current            pointer to the active workspace
+    <name>.current      pointer to that workspace's active issue
   snapshots/           snapshot patch files, keyed by workspace → issue → hash
-  current              pointer to the active workspace
 ```
