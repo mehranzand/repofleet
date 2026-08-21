@@ -26,5 +26,5 @@ func ensureShellIntegration() {
 	if err != nil || !installed {
 		return
 	}
-	fmt.Fprintln(os.Stderr, iostreams.Success("One-time setup: shell integration added to "+rcPath)+" — run: source "+rcPath)
+	fmt.Fprintln(os.Stderr, iostreams.Success("Shell integration set up in "+rcPath)+" — run: source "+rcPath)
 }

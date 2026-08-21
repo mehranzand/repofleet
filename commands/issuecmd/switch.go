@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -37,6 +38,7 @@ type issueItem struct {
 
 func newSwitchCmd(f *factory.Factory) *cobra.Command {
 	var showArchived bool
+	var outFile string
 
 	cmd := &cobra.Command{
 		Use:   "switch [issue-id]",
@@ -93,12 +95,50 @@ the error, or run with no argument to choose interactively.`,
 					fmt.Fprintf(f.IO.Out, "  %s %s\n", iostreams.Green("✓"), r.RepoPath)
 				}
 			}
+
+			cwd, _ := filepath.Abs(".")
+			if !insideAnyRepo(cwd, ctx.Repos) {
+				if target, ok := firstAvailableRepo(ctx.Repos); ok {
+					absTarget, _ := filepath.Abs(target.Path)
+					rel, relErr := filepath.Rel(cwd, absTarget)
+					if relErr != nil {
+						rel = absTarget
+					}
+					if outFile != "" {
+						return os.WriteFile(outFile, []byte(rel), 0o600)
+					}
+					fmt.Fprintln(f.IO.Out, rel)
+				}
+			}
 			return nil
 		},
 	}
 
 	cmd.Flags().BoolVarP(&showArchived, "archived", "A", false, "include archived issues in the list")
+	cmd.Flags().StringVar(&outFile, "out", "", "write the first repo's path to this file when switching from outside any issue repo (used by shell wrapper)")
 	return cmd
+}
+
+func insideAnyRepo(cwd string, repos []store.Repo) bool {
+	for _, r := range repos {
+		abs, err := filepath.Abs(r.Path)
+		if err != nil {
+			continue
+		}
+		if rel, err := filepath.Rel(abs, cwd); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return true
+		}
+	}
+	return false
+}
+
+func firstAvailableRepo(repos []store.Repo) (store.Repo, bool) {
+	for _, r := range repos {
+		if checkRepoPath(r) == nil {
+			return r, true
+		}
+	}
+	return store.Repo{}, false
 }
 
 func promptIssue(wsName string, showArchived bool, currentHash string) (string, error) {
