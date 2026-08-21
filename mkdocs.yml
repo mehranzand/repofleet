@@ -42,12 +42,14 @@ theme:
     - header.autohide
 
 nav:
-  - Home: index.md
-  - Commands:
-    - workspace: workspace.md
-    - repo: repo.md
-    - issue: issue.md
-    - snapshot: snapshot.md
+  - Home:
+    - index.md
+    - Use Cases: use-cases.md
+    - Commands:
+      - workspace: workspace.md
+      - repo: repo.md
+      - issue: issue.md
+      - snapshot: snapshot.md
   - Changelog: changelog.md
 
 markdown_extensions:

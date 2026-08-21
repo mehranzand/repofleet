@@ -4,6 +4,8 @@ Manage workspaces. A workspace groups a set of repositories together and holds a
 
 A `default` workspace is created automatically on first run.
 
+Running `rf workspace` with no subcommand prints the currently selected workspace.
+
 ---
 
 ## rf workspace switch
@@ -32,9 +34,9 @@ rf workspace switch mobile-team
 rf workspace remove <name>
 ```
 
-Remove a workspace along with all its issues and snapshots. Repositories on disk are not affected — only the RepoFleet metadata is deleted.
+Remove a workspace along with all its issues and snapshots. Repositories on disk are not affected; only the RepoFleet metadata is deleted.
 
-Prompts for confirmation before deleting, showing how many repos, issues, and snapshots will be removed. You cannot remove the active workspace — switch to another one first.
+Prompts for confirmation before deleting, showing how many repos, issues, and snapshots will be removed. You cannot remove the active workspace; switch to another one first.
 
 **Examples:**
 

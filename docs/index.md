@@ -4,6 +4,8 @@ RepoFleet is an issue-centered CLI tool for organizing Git workflows. track bran
 
 When a feature or bug spans several services, you normally need to create matching branches, fetch updates, and check the status of each repository separately. RepoFleet ties them together under a single issue context.
 
+See [Use Cases](use-cases.md) for scenario-driven walkthroughs: starting an issue across repos, picking up a teammate's issue to review, and why snapshots beat `git stash` once more than one repo is involved.
+
 ## Command Groups
 
 | Command | Description |

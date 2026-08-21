@@ -1,6 +1,6 @@
 # snapshot
 
-Save and restore uncommitted changes across all repositories in an issue — without using `git stash` or a local commit. Each snapshot captures staged changes, unstaged changes, untracked files, and conflicted files as patch files on disk.
+Save and restore uncommitted changes across all repositories in an issue, without using `git stash` or a local commit. Each snapshot captures staged changes, unstaged changes, untracked files, and conflicted files as patch files on disk.
 
 Snapshots are stored at `~/.config/repofleet/snapshots/<workspace>/<issue-hash>/<snapshot-hash>/`.
 
@@ -85,7 +85,7 @@ rf snapshot list
 rf snapshot remove <snapshot-hash>
 ```
 
-Remove a specific snapshot by hash. Searches all issues in the workspace — no need to be on the issue that owns it.
+Remove a specific snapshot by hash. Searches all issues in the workspace; no need to be on the issue that owns it.
 
 A confirmation prompt is shown before deletion, including the issue ID the snapshot belongs to.
 

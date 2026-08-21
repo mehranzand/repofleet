@@ -35,7 +35,7 @@ rf repo add .                              # add the current directory
 rf repo remove <name>
 ```
 
-Remove a repository from the current workspace. The repository directory on disk is not affected — only the workspace registration is deleted.
+Remove a repository from the current workspace. The repository directory on disk is not affected; only the workspace registration is deleted.
 
 **Examples:**
 
