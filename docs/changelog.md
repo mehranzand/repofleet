@@ -4,6 +4,17 @@ All notable changes to RepoFleet are listed here, newest first.
 
 ---
 
+## v0.7.5 (2026-08-21)
+
+### Added
+- `rf issue switch` now `cd`s into the issue's first available repo when run from outside any of the issue's repos (shell integration required, same as `rf issue goto`); new `--out <file>` flag used internally by the shell wrapper
+
+### Changed
+- Shell integration is now versioned: the installed snippet is replaced in place when a newer version ships, instead of only being installed once and left stale
+- `rf repo remove` now always targets the current workspace; removed the unused `-w`/`--workspace` flag
+
+---
+
 ## v0.7.4 (2026-08-14)
 
 ### Added
