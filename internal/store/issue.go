@@ -129,6 +129,9 @@ func DeleteIssue(wsName, hash string) error {
 	if err := os.Remove(issuePath(wsName, hash)); err != nil {
 		return err
 	}
+	if err := DeleteSnapshotsForIssue(wsName, hash); err != nil {
+		return err
+	}
 	if CurrentIssueHash(wsName) == hash {
 		_ = SetCurrentIssueHash(wsName, "")
 	}
